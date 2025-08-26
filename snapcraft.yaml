@@ -1,7 +1,7 @@
-name: pickpocket
+name: picpocket
 version: 0.1
 base: core24
-summary: PickPocket
+summary: PicPocket
 description: An Immich Client App
 confinement: strict
 grade: stable
@@ -12,8 +12,8 @@ platforms:
   armhf:
 
 apps:
-  pickpocket:
-    desktop: pickpocket.desktop
+  picpocket:
+    desktop: picpocket.desktop
 
     command: usr/lib/qt5/bin/qmlscene $SNAP/qml/Main.qml
 

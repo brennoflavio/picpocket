@@ -1,6 +1,6 @@
-# PickPocket
+# PicPocket
 
-[![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/pickpocket.brennoflavio)
+[![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/picpocket.brennoflavio)
 
 An Immich Client App for Ubuntu Touch. Still under Heavy Development
 

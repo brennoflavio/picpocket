@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(pickpocket C CXX)
+project(picpocket C CXX)
 
 # Automatically create moc files
 set(CMAKE_AUTOMOC ON)
@@ -11,8 +11,8 @@ execute_process(
 )
 set(QT_IMPORTS_DIR "lib/${ARCH_TRIPLET}")
 
-set(PROJECT_NAME "pickpocket")
-set(FULL_PROJECT_NAME "pickpocket.brennoflavio")
+set(PROJECT_NAME "picpocket")
+set(FULL_PROJECT_NAME "picpocket.brennoflavio")
 set(DATA_DIR /)
 set(DESKTOP_FILE_NAME ${PROJECT_NAME}.desktop)
 

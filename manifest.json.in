@@ -1,12 +1,12 @@
 {
-    "name": "pickpocket.brennoflavio",
+    "name": "picpocket.brennoflavio",
     "description": "An Immich Client App",
     "architecture": "@CLICK_ARCH@",
-    "title": "PickPocket",
+    "title": "PicPocket",
     "hooks": {
-        "pickpocket": {
-            "apparmor": "pickpocket.apparmor",
-            "desktop":  "pickpocket.desktop"
+        "picpocket": {
+            "apparmor": "picpocket.apparmor",
+            "desktop":  "picpocket.desktop"
         }
     },
     "version": "@BUILD_VERSION@",
