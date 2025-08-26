@@ -1,0 +1,15 @@
+{
+    "name": "pickpocket.brennoflavio",
+    "description": "An Immich Client App",
+    "architecture": "@CLICK_ARCH@",
+    "title": "PickPocket",
+    "hooks": {
+        "pickpocket": {
+            "apparmor": "pickpocket.apparmor",
+            "desktop":  "pickpocket.desktop"
+        }
+    },
+    "version": "@BUILD_VERSION@",
+    "maintainer": "Brenno Flávio de Almeida <contato@brennoflavio.com.br>",
+    "framework" : "@CLICK_FRAMEWORK@"
+}
