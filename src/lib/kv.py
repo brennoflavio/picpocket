@@ -39,6 +39,8 @@ class KV:
         """
         )
         self.conn.commit()
+        self.cache_values = []
+        self.cache_row_count = 0
 
     def _encode_value(self, value: Any) -> str:
         return json.dumps({"value": value})
@@ -126,3 +128,27 @@ class KV:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+
+    def put_cached(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> None:
+        if ttl_seconds:
+            ttl = int((datetime.now() + timedelta(seconds=ttl_seconds)).timestamp())
+        else:
+            ttl = None
+
+        self.cache_values.extend([key, self._encode_value(value), ttl])
+        self.cache_row_count += 1
+
+    def commit_cached(self) -> None:
+        if not self.cache_values:
+            return
+
+        values = ",".join(["(?, ?, ?)" for _ in range(self.cache_row_count)])
+
+        sql = f"""
+            INSERT OR REPLACE INTO kv (key, value, ttl) VALUES {values}
+        """
+
+        self.cursor.execute(sql, self.cache_values)
+        self.conn.commit()
+        self.cache_values = []
+        self.cache_row_count = 0

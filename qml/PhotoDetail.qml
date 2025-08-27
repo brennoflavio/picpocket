@@ -30,6 +30,8 @@ Page {
     property string photoName: ""
     property string fileType: "IMAGE"
     property bool isLoading: true
+    property string previousId: ""
+    property string nextId: ""
 
     header: PageHeader {
         id: pageHeader
@@ -73,9 +75,25 @@ Page {
                 if (result.file_type) {
                     photoDetailPage.fileType = result.file_type
                 }
+                photoDetailPage.previousId = result.previous || ""
+                photoDetailPage.nextId = result.next || ""
             }
             photoDetailPage.isLoading = false
         })
+    }
+
+    function navigateToPrevious() {
+        if (photoDetailPage.previousId && photoDetailPage.previousId !== "") {
+            photoDetailPage.photoId = photoDetailPage.previousId
+            loadPhotoDetails()
+        }
+    }
+
+    function navigateToNext() {
+        if (photoDetailPage.nextId && photoDetailPage.nextId !== "") {
+            photoDetailPage.photoId = photoDetailPage.nextId
+            loadPhotoDetails()
+        }
     }
 
     Item {
@@ -90,6 +108,105 @@ Page {
             id: mediaLoader
             anchors.fill: parent
             sourceComponent: photoDetailPage.fileType === "VIDEO" ? videoComponent : imageComponent
+        }
+
+        MouseArea {
+            id: swipeArea
+            anchors.fill: parent
+            property real startX: 0
+            property bool swiping: false
+            z: -1
+
+            onPressed: {
+                startX = mouse.x
+                swiping = true
+            }
+
+            onReleased: {
+                if (swiping) {
+                    var diff = mouse.x - startX
+                    if (Math.abs(diff) > units.gu(10)) {
+                        if (diff > 0 && photoDetailPage.previousId !== "") {
+                            navigateToPrevious()
+                        } else if (diff < 0 && photoDetailPage.nextId !== "") {
+                            navigateToNext()
+                        }
+                    }
+                }
+                swiping = false
+            }
+
+            onCanceled: {
+                swiping = false
+            }
+        }
+
+        MouseArea {
+            id: previousArea
+            anchors {
+                left: parent.left
+                top: parent.top
+                bottom: parent.bottom
+            }
+            width: units.gu(8)
+            enabled: photoDetailPage.previousId !== ""
+            onClicked: navigateToPrevious()
+
+            Rectangle {
+                anchors.fill: parent
+                color: theme.palette.normal.foreground
+                opacity: previousArea.pressed ? 0.3 : 0
+                Behavior on opacity { NumberAnimation { duration: 100 } }
+            }
+
+            Icon {
+                anchors {
+                    left: parent.left
+                    leftMargin: units.gu(1)
+                    verticalCenter: parent.verticalCenter
+                }
+                width: units.gu(4)
+                height: width
+                name: "go-previous"
+                color: "white"
+                opacity: previousArea.containsMouse || previousArea.pressed ? 0.9 : 0.5
+                visible: photoDetailPage.previousId !== ""
+                Behavior on opacity { NumberAnimation { duration: 100 } }
+            }
+        }
+
+        MouseArea {
+            id: nextArea
+            anchors {
+                right: parent.right
+                top: parent.top
+                bottom: parent.bottom
+            }
+            width: units.gu(8)
+            enabled: photoDetailPage.nextId !== ""
+            onClicked: navigateToNext()
+
+            Rectangle {
+                anchors.fill: parent
+                color: theme.palette.normal.foreground
+                opacity: nextArea.pressed ? 0.3 : 0
+                Behavior on opacity { NumberAnimation { duration: 100 } }
+            }
+
+            Icon {
+                anchors {
+                    right: parent.right
+                    rightMargin: units.gu(1)
+                    verticalCenter: parent.verticalCenter
+                }
+                width: units.gu(4)
+                height: width
+                name: "go-next"
+                color: "white"
+                opacity: nextArea.containsMouse || nextArea.pressed ? 0.9 : 0.5
+                visible: photoDetailPage.nextId !== ""
+                Behavior on opacity { NumberAnimation { duration: 100 } }
+            }
         }
 
         Component {

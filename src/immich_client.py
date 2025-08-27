@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from urllib.parse import urljoin
 
 from src.constants import APP_NAME, CRASH_REPORT_URL, DEFAULT_CACHE_DAYS
@@ -188,10 +188,15 @@ def timeline():
     ids = response.data.get("id", [])
     days = [x[8:10] for x in response.data.get("fileCreatedAt", [])]
 
-    with ThreadPoolExecutor() as pool:
+    with ThreadPoolExecutor() as pool, KV(APP_NAME) as kv:
         futures = {}
-        for id_ in ids:
+        for i, id_ in enumerate(ids):
             futures[id_] = pool.submit(thumbnail, url, token, id_)
+            if i - 1 > 0:
+                kv.put_cached(f"photo.{id_}.previous", ids[i - 1])
+            if i + 1 < len(ids):
+                kv.put_cached(f"photo.{id_}.next", ids[i + 1])
+        kv.commit_cached()
 
     data_structure = {}
     for id_, day in zip(ids, days):
@@ -217,14 +222,22 @@ class Preview:
     id: str
     name: str
     file_type: str
+    previous: Optional[str]
+    next: Optional[str]
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
 def preview_image(url: str, token: str, base_folder: str, image_id: str, file_name: str) -> Preview:
+    with KV(APP_NAME) as kv:
+        previous = kv.get(f"photo.{image_id}.previous")
+        next_ = kv.get(f"photo.{image_id}.next")
+
     file_path = os.path.join(base_folder, f"{image_id}.jpeg")
 
     if os.path.isfile(file_path):
-        return Preview(filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE)
+        return Preview(
+            filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE, previous=previous, next=next_
+        )
 
     photo_response = get_binary(
         urljoin(url, f"/api/assets/{image_id}/thumbnail"),
@@ -234,15 +247,23 @@ def preview_image(url: str, token: str, base_folder: str, image_id: str, file_na
     with open(file_path, "wb+") as f:
         f.write(photo_response.data)
 
-    return Preview(filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE)
+    return Preview(
+        filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE, previous=previous, next=next_
+    )
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
 def preview_video(url: str, token: str, base_folder: str, image_id: str, file_name: str) -> Preview:
+    with KV(APP_NAME) as kv:
+        previous = kv.get(f"photo.{image_id}.previous")
+        next_ = kv.get(f"photo.{image_id}.next")
+
     file_path = os.path.join(base_folder, f"{image_id}.mp4")
 
     if os.path.isfile(file_path):
-        return Preview(filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO)
+        return Preview(
+            filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO, previous=previous, next=next_
+        )
 
     video_response = get_binary(
         urljoin(url, f"/api/assets/{image_id}/video/playback"),
@@ -252,7 +273,9 @@ def preview_video(url: str, token: str, base_folder: str, image_id: str, file_na
         f.write(video_response.data)
         f.flush()
 
-    return Preview(filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO)
+    return Preview(
+        filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO, previous=previous, next=next_
+    )
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
