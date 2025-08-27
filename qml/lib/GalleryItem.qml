@@ -21,6 +21,7 @@ Item {
     id: galleryItem
 
     property string filePath: ""
+    property string duration: ""
 
     signal clicked()
 
@@ -49,6 +50,28 @@ Item {
             cache: true
             asynchronous: true
             visible: source !== ""
+        }
+
+        Rectangle {
+            anchors {
+                top: parent.top
+                left: parent.left
+                topMargin: units.gu(0.5)
+                leftMargin: units.gu(0.5)
+            }
+            width: durationLabel.width + units.gu(1)
+            height: units.gu(2)
+            radius: units.gu(0.3)
+            color: Qt.rgba(0, 0, 0, 0.7)
+            visible: galleryItem.duration !== ""
+
+            Label {
+                id: durationLabel
+                anchors.centerIn: parent
+                text: galleryItem.duration
+                fontSize: "x-small"
+                color: "white"
+            }
         }
 
         MouseArea {

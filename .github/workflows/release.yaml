@@ -1,0 +1,25 @@
+name: Publish Docker image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Pull Clickable
+        run: |
+          docker pull clickable/ci-20.04-amd64:latest
+
+      - name: Build
+        run: |
+          docker run --volume ./:/app clickable/ci-20.04-amd64:latest bash -c "cd /app && clickable build"
+
+      - name: Deploy
+        run: |
+          docker run --env OPENSTORE_API_KEY="${{ secrets.OPENSTORE_API_KEY }}" --volume ./:/app clickable/ci-20.04-amd64:latest bash -c "cd /app && clickable publish -- '${{ github.event.head_commit.message }}'"

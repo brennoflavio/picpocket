@@ -82,6 +82,7 @@ Column {
 
                     GalleryItem {
                         filePath: modelData.filePath || ""
+                        duration: modelData.duration || ""
                         width: (gallery.width - units.gu(0.4)) / 3
                         height: width
 

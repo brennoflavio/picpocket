@@ -133,16 +133,17 @@ def login(url: str, email: str, password: str) -> ImmichResponse:
 class Image:
     filePath: str
     id: str
+    duration: Optional[str]
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def thumbnail(url: str, token: str, image_id: str) -> Image:
+def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Image:
     base_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
     os.makedirs(base_folder, exist_ok=True)
     file_path = os.path.join(base_folder, f"{image_id}.webp")
 
     if os.path.isfile(file_path):
-        return Image(filePath=file_path, id=image_id)
+        return Image(filePath=file_path, id=image_id, duration=duration)
 
     response = get_binary(
         urljoin(url, f"/api/assets/{image_id}/thumbnail"),
@@ -151,7 +152,7 @@ def thumbnail(url: str, token: str, image_id: str) -> Image:
     )
     with open(file_path, "wb+") as f:
         f.write(response.data)
-    return Image(filePath=file_path, id=image_id)
+    return Image(filePath=file_path, id=image_id, duration=duration)
 
 
 @dataclass
@@ -187,11 +188,13 @@ def timeline():
     )
     ids = response.data.get("id", [])
     days = [x[8:10] for x in response.data.get("fileCreatedAt", [])]
+    durations = response.data.get("duration", [])
 
     with ThreadPoolExecutor() as pool, KV(APP_NAME) as kv:
         futures = {}
         for i, id_ in enumerate(ids):
-            futures[id_] = pool.submit(thumbnail, url, token, id_)
+            duration = durations[i][3:8] if durations[i] else None
+            futures[id_] = pool.submit(thumbnail, url, token, id_, duration)
             if i - 1 > 0:
                 kv.put_cached(f"photo.{id_}.previous", ids[i - 1])
             if i + 1 < len(ids):
