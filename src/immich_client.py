@@ -26,7 +26,7 @@ from urllib.parse import urljoin
 from src.constants import APP_NAME, CRASH_REPORT_URL, DEFAULT_CACHE_DAYS
 from src.lib.config import get_cache_path
 from src.lib.crash import crash_reporter
-from src.lib.http import get_binary, get_dict, post_dict
+from src.lib.http import delete_dict, get_binary, get_dict, post_dict, put_dict
 from src.lib.kv import KV
 from src.lib.utils import dataclass_to_dict
 
@@ -227,10 +227,11 @@ class Preview:
     file_type: str
     previous: Optional[str]
     next: Optional[str]
+    favorite: bool
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def preview_image(url: str, token: str, base_folder: str, image_id: str, file_name: str) -> Preview:
+def preview_image(url: str, token: str, base_folder: str, image_id: str, file_name: str, favorite: bool) -> Preview:
     with KV(APP_NAME) as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
@@ -239,7 +240,13 @@ def preview_image(url: str, token: str, base_folder: str, image_id: str, file_na
 
     if os.path.isfile(file_path):
         return Preview(
-            filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE, previous=previous, next=next_
+            filePath=file_path,
+            id=image_id,
+            name=file_name,
+            file_type=FileType.IMAGE,
+            previous=previous,
+            next=next_,
+            favorite=favorite,
         )
 
     photo_response = get_binary(
@@ -251,12 +258,18 @@ def preview_image(url: str, token: str, base_folder: str, image_id: str, file_na
         f.write(photo_response.data)
 
     return Preview(
-        filePath=file_path, id=image_id, name=file_name, file_type=FileType.IMAGE, previous=previous, next=next_
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.IMAGE,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
     )
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def preview_video(url: str, token: str, base_folder: str, image_id: str, file_name: str) -> Preview:
+def preview_video(url: str, token: str, base_folder: str, image_id: str, file_name: str, favorite: bool) -> Preview:
     with KV(APP_NAME) as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
@@ -265,7 +278,13 @@ def preview_video(url: str, token: str, base_folder: str, image_id: str, file_na
 
     if os.path.isfile(file_path):
         return Preview(
-            filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO, previous=previous, next=next_
+            filePath=file_path,
+            id=image_id,
+            name=file_name,
+            file_type=FileType.VIDEO,
+            previous=previous,
+            next=next_,
+            favorite=favorite,
         )
 
     video_response = get_binary(
@@ -277,7 +296,13 @@ def preview_video(url: str, token: str, base_folder: str, image_id: str, file_na
         f.flush()
 
     return Preview(
-        filePath=file_path, id=image_id, name=file_name, file_type=FileType.VIDEO, previous=previous, next=next_
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.VIDEO,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
     )
 
 
@@ -293,22 +318,28 @@ def preview(image_id: str) -> Preview:
 
         file_name = kv.get(f"photo.{image_id}.name")
         file_type = kv.get(f"photo.{image_id}.type")
+        favorite = kv.get(f"photo.{image_id}.favorite")
 
-        if not file_name or not file_type:
+        if not file_name or not file_type or favorite is None:
             metadata_response = get_dict(
                 urljoin(url, f"/api/assets/{image_id}"),
                 headers={"Authorization": f"Bearer {token}"},
             )
             file_name = metadata_response.data.get("originalFileName", "")
             file_type = metadata_response.data.get("type", "IMAGE")
+            favorite = metadata_response.data.get("isFavorite", False)
+
+            kv.put(f"photo.{image_id}.name", file_name, ttl_seconds=300)
+            kv.put(f"photo.{image_id}.type", file_type, ttl_seconds=300)
+            kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
 
     base_folder = os.path.join(get_cache_path(APP_NAME), "preview")
     os.makedirs(base_folder, exist_ok=True)
 
     if file_type == "VIDEO":
-        return preview_video(url, token, base_folder, image_id, file_name)
+        return preview_video(url, token, base_folder, image_id, file_name, favorite)
 
-    return preview_image(url, token, base_folder, image_id, file_name)
+    return preview_image(url, token, base_folder, image_id, file_name, favorite)
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
@@ -372,3 +403,53 @@ def logout():
         kv.delete("immich.profile_image_path")
         kv.delete("immich.should_change_password")
         kv.delete("immich.is_onboarded")
+
+
+@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+def favorite(image_id: str, favorite: bool):
+    with KV(APP_NAME) as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        put_dict(
+            urljoin(url, f"/api/assets/{image_id}"),
+            {"isFavorite": favorite},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
+
+
+@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+def archive(image_id: str):
+    with KV(APP_NAME) as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        put_dict(
+            urljoin(url, f"/api/assets/{image_id}"),
+            {"visibility": "archive"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+
+@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+def delete(image_id: str):
+    with KV(APP_NAME) as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        delete_dict(
+            urljoin(url, "/api/assets"),
+            {"ids": [image_id]},
+            headers={"Authorization": f"Bearer {token}"},
+        )

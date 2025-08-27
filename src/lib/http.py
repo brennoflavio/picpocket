@@ -161,3 +161,35 @@ def put_dict(url: str, data: Dict, headers: Optional[Dict[str, str]] = None) -> 
         return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
     except Exception as e:
         return DictResponse(success=False, status_code=0, data={"error": str(e)})
+
+
+def delete_dict(url: str, data: Optional[Dict] = None, headers: Optional[Dict[str, str]] = None) -> DictResponse:
+    if data:
+        json_data = json.dumps(data).encode("utf-8")
+    else:
+        json_data = None
+
+    request_headers = {"Content-Type": "application/json"}
+    if headers:
+        request_headers.update(headers)
+
+    request = urllib.request.Request(url, data=json_data, headers=request_headers, method="DELETE")
+
+    try:
+        with urllib.request.urlopen(request) as response:
+            response_data = response.read().decode("utf-8")
+            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
+    except urllib.error.HTTPError as e:
+        error_data = {}
+        try:
+            if e.fp:
+                error_content = e.fp.read().decode("utf-8")
+                error_data = json.loads(error_content)
+        except Exception:
+            pass
+
+        return DictResponse(success=False, status_code=e.code, data=error_data)
+    except urllib.error.URLError as e:
+        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
+    except Exception as e:
+        return DictResponse(success=False, status_code=0, data={"error": str(e)})

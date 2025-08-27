@@ -32,6 +32,7 @@ Page {
     property bool isLoading: true
     property string previousId: ""
     property string nextId: ""
+    property bool isFavorite: false
 
     header: PageHeader {
         id: pageHeader
@@ -77,6 +78,7 @@ Page {
                 }
                 photoDetailPage.previousId = result.previous || ""
                 photoDetailPage.nextId = result.next || ""
+                photoDetailPage.isFavorite = result.favorite || false
             }
             photoDetailPage.isLoading = false
         })
@@ -393,6 +395,105 @@ Page {
                             fontSize: "small"
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: i18n.tr("Share")
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+
+                AbstractButton {
+                    anchors.fill: parent
+                    onClicked: {
+                        var newFavoriteState = !photoDetailPage.isFavorite
+                        photoDetailPage.isFavorite = newFavoriteState
+                        python.call('immich_client.favorite', [photoDetailPage.photoId, newFavoriteState], function(result) {
+                        })
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: units.gu(0.5)
+
+                        Icon {
+                            width: units.gu(3)
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: theme.palette.normal.foregroundText
+                            name: photoDetailPage.isFavorite ? "starred" : "non-starred"
+                        }
+
+                        Label {
+                            fontSize: "small"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: i18n.tr("Favorite")
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+
+                AbstractButton {
+                    anchors.fill: parent
+                    onClicked: {
+                        python.call('immich_client.archive', [photoDetailPage.photoId], function(result) {
+                            pageStack.clear()
+                            pageStack.push(Qt.resolvedUrl("GalleryPage.qml"))
+                        })
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: units.gu(0.5)
+
+                        Icon {
+                            width: units.gu(3)
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: theme.palette.normal.foregroundText
+                            name: "save"
+                        }
+
+                        Label {
+                            fontSize: "small"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: i18n.tr("Archive")
+                        }
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+
+                AbstractButton {
+                    anchors.fill: parent
+                    onClicked: {
+                        python.call('immich_client.delete', [photoDetailPage.photoId], function(result) {
+                            pageStack.clear()
+                            pageStack.push(Qt.resolvedUrl("GalleryPage.qml"))
+                        })
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: units.gu(0.5)
+
+                        Icon {
+                            width: units.gu(3)
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: theme.palette.normal.foregroundText
+                            name: "delete"
+                        }
+
+                        Label {
+                            fontSize: "small"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: i18n.tr("Delete")
                         }
                     }
                 }

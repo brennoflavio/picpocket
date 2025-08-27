@@ -86,6 +86,45 @@ Page {
         }
     }
 
+    AbstractButton {
+        id: scrollToTopButton
+        anchors {
+            right: parent.right
+            rightMargin: units.gu(2)
+            bottom: parent.bottom
+            bottomMargin: units.gu(2)
+        }
+        width: units.gu(6)
+        height: units.gu(6)
+        visible: flickable.contentY > units.gu(10)
+        opacity: visible ? 1.0 : 0.0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 200
+            }
+        }
+
+        onClicked: {
+            flickable.contentY = 0
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            color: theme.palette.normal.foreground
+            opacity: 0.9
+
+            Icon {
+                anchors.centerIn: parent
+                width: units.gu(3)
+                height: units.gu(3)
+                name: "up"
+                color: theme.palette.normal.foregroundText
+            }
+        }
+    }
+
     LoadToast {
         id: loadingToast
         showSpinner: true
