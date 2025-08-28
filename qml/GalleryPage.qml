@@ -35,8 +35,21 @@ Page {
 
     property var galleryData: ({
         month: "",
-        days: []
+        days: [],
+        previous: "",
+        next: ""
     })
+
+    function loadTimeline(hint) {
+        loadingToast.showing = true;
+        loadingToast.message = i18n.tr("Loading photos...");
+
+        var args = hint ? [hint] : [""];
+        python.call('immich_client.timeline', args, function(result) {
+            galleryPage.galleryData = result;
+            loadingToast.showing = false;
+        });
+    }
 
     Python {
         id: python
@@ -44,14 +57,8 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
 
-            loadingToast.showing = true;
-            loadingToast.message = i18n.tr("Loading photos...");
-
             importModule('immich_client', function() {
-                python.call('immich_client.timeline', [], function(result) {
-                    galleryPage.galleryData = result;
-                    loadingToast.showing = false;
-                });
+                loadTimeline("");
             });
         }
 
@@ -66,7 +73,7 @@ Page {
             top: header.bottom
             left: parent.left
             right: parent.right
-            bottom: parent.bottom
+            bottom: actionBar.top
         }
         contentHeight: gallery.height
         clip: true
@@ -86,12 +93,89 @@ Page {
         }
     }
 
+    Rectangle {
+        id: actionBar
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: units.gu(8)
+        color: theme.palette.normal.background
+
+        Rectangle {
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+            height: units.dp(1)
+            color: theme.palette.normal.base
+        }
+
+        RowLayout {
+            anchors {
+                fill: parent
+                margins: units.gu(1)
+            }
+            spacing: 0
+
+            AbstractButton {
+                id: previousButton
+                Layout.preferredWidth: units.gu(6)
+                Layout.fillHeight: true
+                enabled: galleryPage.galleryData.previous !== "" && !loadingToast.showing
+
+                Icon {
+                    anchors.centerIn: parent
+                    width: units.gu(3)
+                    height: width
+                    name: "go-previous"
+                    color: previousButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                }
+
+                onClicked: {
+                    if (galleryPage.galleryData.previous) {
+                        loadTimeline(galleryPage.galleryData.previous)
+                        flickable.contentY = 0
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            AbstractButton {
+                id: nextButton
+                Layout.preferredWidth: units.gu(6)
+                Layout.fillHeight: true
+                enabled: galleryPage.galleryData.next !== "" && !loadingToast.showing
+
+                Icon {
+                    anchors.centerIn: parent
+                    width: units.gu(3)
+                    height: width
+                    name: "go-next"
+                    color: nextButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                }
+
+                onClicked: {
+                    if (galleryPage.galleryData.next) {
+                        loadTimeline(galleryPage.galleryData.next)
+                        flickable.contentY = 0
+                    }
+                }
+            }
+        }
+    }
+
     AbstractButton {
         id: scrollToTopButton
         anchors {
             right: parent.right
             rightMargin: units.gu(2)
-            bottom: parent.bottom
+            bottom: actionBar.top
             bottomMargin: units.gu(2)
         }
         width: units.gu(6)

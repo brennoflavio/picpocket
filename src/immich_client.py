@@ -28,7 +28,9 @@ from src.lib.config import get_cache_path
 from src.lib.crash import crash_reporter
 from src.lib.http import delete_dict, get_binary, get_dict, post_dict, put_dict
 from src.lib.kv import KV
+from src.lib.memoize import memoize
 from src.lib.utils import dataclass_to_dict
+from src.utils import add_month
 
 
 def set_crash_logs(crash_logs: bool):
@@ -165,11 +167,14 @@ class Day:
 class TimelineResponse:
     month: str
     days: List[Day]
+    next: Optional[str]
+    previous: str
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@memoize(APP_NAME, 300)
 @dataclass_to_dict
-def timeline():
+def timeline(bucket: Optional[str] = None) -> TimelineResponse:
     with KV(APP_NAME) as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -178,9 +183,19 @@ def timeline():
         raise ValueError("Missing URL or token")
 
     now = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    month = now.strftime("%B")
+    if bucket:
+        current = datetime.fromisoformat(bucket)
+        previous = add_month(current, -1)
+        next_ = add_month(current, 1)
+        if next_ > datetime.now():
+            next_ = None
+    else:
+        previous = add_month(now, -1)
+        next_ = None
+        current = now
 
-    bucket_date = now.isoformat()
+    month = current.strftime("%B")
+    bucket_date = current.isoformat()
     response = get_dict(
         urljoin(url, "/api/timeline/bucket"),
         headers={"Authorization": f"Bearer {token}"},
@@ -211,7 +226,9 @@ def timeline():
     for k, v in data_structure.items():
         days.append(Day(date=f"{month} {k}", images=v))
 
-    return TimelineResponse(month=month, days=days)
+    return TimelineResponse(
+        month=month, days=days, previous=previous.isoformat(), next=next_.isoformat() if next_ else None
+    )
 
 
 class FileType(str, Enum):
