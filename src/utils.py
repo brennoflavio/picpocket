@@ -35,3 +35,9 @@ def add_month(date: datetime, months: int) -> datetime:
     target_day = min(date.day, last_day_of_target_month)
 
     return date.replace(year=target_year, month=target_month, day=target_day)
+
+
+def is_webp(data: bytes):
+    if len(data) < 12:
+        return False
+    return data[:4] == b"RIFF" and data[8:12] == b"WEBP"

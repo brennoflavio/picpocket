@@ -17,6 +17,7 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
+import Lomiri.Content 1.3
 import io.thp.pyotherside 1.4
 import "lib"
 
@@ -26,8 +27,12 @@ Page {
     header: AppHeader {
         id: header
         pageTitle: i18n.tr('PicPocket')
-        iconName: "stock_image"
-        showSettingsButton: true
+        iconName: picturePicker.visible ? "" : "stock_image"
+        showBackButton: picturePicker.visible
+        showSettingsButton: !picturePicker.visible
+        onBackClicked: {
+            picturePicker.visible = false
+        }
         onSettingsClicked: {
             pageStack.push(Qt.resolvedUrl("ConfigurationPage.qml"))
         }
@@ -147,6 +152,40 @@ Page {
             }
 
             AbstractButton {
+                id: uploadButton
+                Layout.preferredWidth: units.gu(6)
+                Layout.fillHeight: true
+                enabled: !loadingToast.showing
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: units.gu(0.5)
+
+                    Icon {
+                        width: units.gu(3)
+                        height: width
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        name: "keyboard-caps-disabled"
+                        color: uploadButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                    }
+
+                    Label {
+                        fontSize: "small"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: i18n.tr("Upload")
+                    }
+                }
+
+                onClicked: {
+                    picturePicker.visible = true
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            AbstractButton {
                 id: nextButton
                 Layout.preferredWidth: units.gu(6)
                 Layout.fillHeight: true
@@ -212,5 +251,47 @@ Page {
     LoadToast {
         id: loadingToast
         showSpinner: true
+    }
+
+    ContentStore {
+        id: contentStore
+        scope: ContentScope.App
+    }
+
+    ContentPeerPicker {
+        id: picturePicker
+        visible: false
+        contentType: ContentType.Pictures
+        handler: ContentHandler.Source
+
+        onPeerSelected: {
+            var transfer = peer.request(contentStore)
+            transfer.selectionType = ContentTransfer.Single
+
+            transfer.stateChanged.connect(function() {
+                if (transfer.state === ContentTransfer.Charged) {
+                    if (transfer.items.length > 0) {
+                        var fileUrl = transfer.items[0].url.toString()
+                        var filePath = fileUrl.replace("file://", "")
+
+                        loadingToast.message = i18n.tr("Uploading photo...")
+                        loadingToast.showing = true
+
+                        python.call('immich_client.upload_photo', [filePath], function(result) {
+                            loadingToast.showing = false
+                            console.log(result)
+                            if (result) {
+                                loadTimeline("")
+                            }
+                        })
+                    }
+                    picturePicker.visible = false
+                }
+            })
+        }
+
+        onCancelPressed: {
+            picturePicker.visible = false
+        }
     }
 }

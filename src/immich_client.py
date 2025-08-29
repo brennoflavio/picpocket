@@ -26,11 +26,18 @@ from urllib.parse import urljoin
 from src.constants import APP_NAME, CRASH_REPORT_URL, DEFAULT_CACHE_DAYS
 from src.lib.config import get_cache_path
 from src.lib.crash import crash_reporter
-from src.lib.http import delete_dict, get_binary, get_dict, post_dict, put_dict
+from src.lib.http import (
+    delete_dict,
+    get_binary,
+    get_dict,
+    post_dict,
+    post_file,
+    put_dict,
+)
 from src.lib.kv import KV
-from src.lib.memoize import memoize
+from src.lib.memoize import delete_memoized, memoize
 from src.lib.utils import dataclass_to_dict
-from src.utils import add_month
+from src.utils import add_month, is_webp
 
 
 def set_crash_logs(crash_logs: bool):
@@ -139,7 +146,7 @@ class Image:
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Image:
+def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Optional[Image]:
     base_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
     os.makedirs(base_folder, exist_ok=True)
     file_path = os.path.join(base_folder, f"{image_id}.webp")
@@ -152,9 +159,13 @@ def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> I
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "thumbnail"},
     )
-    with open(file_path, "wb+") as f:
-        f.write(response.data)
-    return Image(filePath=file_path, id=image_id, duration=duration)
+    data = response.data
+    if is_webp(data):
+        with open(file_path, "wb+") as f:
+            f.write(data)
+        return Image(filePath=file_path, id=image_id, duration=duration)
+    else:
+        return None
 
 
 @dataclass
@@ -220,14 +231,19 @@ def timeline(bucket: Optional[str] = None) -> TimelineResponse:
     for id_, day in zip(ids, days):
         if day not in data_structure:
             data_structure[day] = []
-        data_structure[day].append(futures[id_].result())
+        result = futures[id_].result()
+        if result:
+            data_structure[day].append(result)
 
     days = []
     for k, v in data_structure.items():
         days.append(Day(date=f"{month} {k}", images=v))
 
     return TimelineResponse(
-        month=month, days=days, previous=previous.isoformat(), next=next_.isoformat() if next_ else None
+        month=month,
+        days=days,
+        previous=previous.isoformat(),
+        next=next_.isoformat() if next_ else None,
     )
 
 
@@ -248,7 +264,14 @@ class Preview:
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def preview_image(url: str, token: str, base_folder: str, image_id: str, file_name: str, favorite: bool) -> Preview:
+def preview_image(
+    url: str,
+    token: str,
+    base_folder: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+) -> Preview:
     with KV(APP_NAME) as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
@@ -286,7 +309,14 @@ def preview_image(url: str, token: str, base_folder: str, image_id: str, file_na
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-def preview_video(url: str, token: str, base_folder: str, image_id: str, file_name: str, favorite: bool) -> Preview:
+def preview_video(
+    url: str,
+    token: str,
+    base_folder: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+) -> Preview:
     with KV(APP_NAME) as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
@@ -454,6 +484,7 @@ def archive(image_id: str):
             {"visibility": "archive"},
             headers={"Authorization": f"Bearer {token}"},
         )
+    delete_memoized(APP_NAME, timeline)
 
 
 @crash_reporter(CRASH_REPORT_URL, get_crash_logs)
@@ -470,3 +501,40 @@ def delete(image_id: str):
             {"ids": [image_id]},
             headers={"Authorization": f"Bearer {token}"},
         )
+    delete_memoized(APP_NAME, timeline)
+
+
+@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+def upload_photo(file_path: str) -> bool:
+    with KV(APP_NAME) as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+    stat_info = os.stat(file_path)
+    modified_time = datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+    creation_time = datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+
+    file_name = file_path.split("/")[-1]
+    now_ts = int(datetime.now().timestamp())
+    data = {
+        "deviceAssetId": f"ubuntu-touch-{file_name}-{now_ts}",
+        "deviceId": "ubuntu-touch",
+        "fileCreatedAt": creation_time,
+        "fileModifiedAt": modified_time,
+    }
+
+    with open(file_path, "rb") as f:
+        response = post_file(
+            url=urljoin(url, "/api/assets"),
+            file_data=f.read(),
+            file_name=file_name,
+            file_field="assetData",
+            form_fields=data,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        delete_memoized(APP_NAME, timeline)
+        time.sleep(0.5)
+        return response.success

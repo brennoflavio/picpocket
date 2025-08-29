@@ -19,7 +19,7 @@ import hashlib
 import json
 from typing import Any, Callable
 
-from src.lib.kv import KV
+from .kv import KV
 
 
 def memoize(app_name: str, ttl_seconds: int):
@@ -28,15 +28,27 @@ def memoize(app_name: str, ttl_seconds: int):
         def wrapper(*args, **kwargs) -> Any:
             function_name = f"{func.__module__}.{func.__name__}"
             encoded_args = f"{json.dumps(args, sort_keys=True)}-{json.dumps(kwargs, sort_keys=True)}"
-            hash_key = hashlib.sha1(f"{function_name}-{encoded_args}".encode()).hexdigest()
+            hashed_function_name = hashlib.sha1(f"{function_name}".encode()).hexdigest()
+            hashed_encoded_args = hashlib.sha1(f"{encoded_args}".encode()).hexdigest()
             with KV(app_name) as kv:
-                response = kv.get(f"memoize.{hash_key}")
+                response = kv.get(f"memoize.{hashed_function_name}.{hashed_encoded_args}")
                 if response is not None:
                     return response
                 result = func(*args, **kwargs)
-                kv.put(f"memoize.{hash_key}", result, ttl_seconds=ttl_seconds)
+                kv.put(
+                    f"memoize.{hashed_function_name}.{hashed_encoded_args}",
+                    result,
+                    ttl_seconds=ttl_seconds,
+                )
                 return result
 
         return wrapper
 
     return decorator
+
+
+def delete_memoized(app_name: str, function: Callable):
+    function_name = f"{function.__module__}.{function.__name__}"
+    hashed_function_name = hashlib.sha1(f"{function_name}".encode()).hexdigest()
+    with KV(app_name) as kv:
+        kv.delete_partial(f"memoize.{hashed_function_name}")

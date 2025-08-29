@@ -18,7 +18,7 @@ import functools
 import traceback
 from typing import Any, Callable
 
-from src.lib.http import post_dict
+from .http import post_dict
 
 
 def crash_reporter(crash_url: str, crash_enabled_function: Callable[[], bool]):

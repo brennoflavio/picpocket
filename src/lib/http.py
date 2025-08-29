@@ -21,6 +21,8 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Dict, Optional
 
+from .mimetypes import guess_type
+
 
 @dataclass
 class DictResponse:
@@ -174,6 +176,64 @@ def delete_dict(url: str, data: Optional[Dict] = None, headers: Optional[Dict[st
         request_headers.update(headers)
 
     request = urllib.request.Request(url, data=json_data, headers=request_headers, method="DELETE")
+
+    try:
+        with urllib.request.urlopen(request) as response:
+            response_data = response.read().decode("utf-8")
+            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
+    except urllib.error.HTTPError as e:
+        error_data = {}
+        try:
+            if e.fp:
+                error_content = e.fp.read().decode("utf-8")
+                error_data = json.loads(error_content)
+        except Exception:
+            pass
+
+        return DictResponse(success=False, status_code=e.code, data=error_data)
+    except urllib.error.URLError as e:
+        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
+    except Exception as e:
+        return DictResponse(success=False, status_code=0, data={"error": str(e)})
+
+
+def post_file(
+    url: str,
+    file_data: bytes,
+    file_name: str,
+    file_field: str,
+    form_fields: Optional[Dict[str, str]] = None,
+    headers: Optional[Dict[str, str]] = None,
+) -> DictResponse:
+    boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+    content_type = f"multipart/form-data; boundary={boundary}"
+
+    mime_type = guess_type(file_name)[0] or "application/octet-stream"
+
+    body_parts = []
+
+    if form_fields:
+        for field_name, field_value in form_fields.items():
+            body_parts.append(f"--{boundary}".encode())
+            body_parts.append(f'Content-Disposition: form-data; name="{field_name}"'.encode())
+            body_parts.append(b"")
+            body_parts.append(str(field_value).encode())
+
+    body_parts.append(f"--{boundary}".encode())
+    body_parts.append(f'Content-Disposition: form-data; name="{file_field}"; filename="{file_name}"'.encode())
+    body_parts.append(f"Content-Type: {mime_type}".encode())
+    body_parts.append(b"")
+    body_parts.append(file_data)
+
+    body_parts.append(f"--{boundary}--".encode())
+
+    body = b"\r\n".join(body_parts)
+
+    request_headers = {"Content-Type": content_type}
+    if headers:
+        request_headers.update(headers)
+
+    request = urllib.request.Request(url, data=body, headers=request_headers, method="POST")
 
     try:
         with urllib.request.urlopen(request) as response:
