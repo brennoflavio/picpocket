@@ -65,6 +65,17 @@ Page {
         });
     }
 
+    function clearAllCache() {
+        loadingToast.message = i18n.tr("Clearing cache...");
+        loadingToast.showing = true;
+
+        python.call('immich_client.delete_cache', [], function() {
+            loadingToast.showing = false;
+            pageStack.clear();
+            pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+        });
+    }
+
     Flickable {
         anchors {
             top: header.bottom
@@ -100,6 +111,21 @@ Page {
                 }
 
                 ActionButton {
+                    text: i18n.tr("Clear All Cache")
+                    iconName: "delete"
+                    backgroundColor: theme.palette.normal.activity
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked: {
+                        configurationPage.clearAllCache();
+                    }
+                }
+
+                Item {
+                    width: parent.width
+                    height: units.gu(2)
+                }
+
+                ActionButton {
                     text: i18n.tr("Logout")
                     iconName: "system-log-out"
                     backgroundColor: theme.palette.normal.negative
@@ -124,6 +150,11 @@ Page {
                 }
             }
         }
+    }
+
+    LoadToast {
+        id: loadingToast
+        showSpinner: true
     }
 
     Python {

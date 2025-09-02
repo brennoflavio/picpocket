@@ -17,3 +17,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 APP_NAME = "picpocket.brennoflavio"
 DEFAULT_CACHE_DAYS = 30
 CRASH_REPORT_URL = "https://ut.brennoflavio.com.br/crash"
+MAX_GALLERY_PER_PAGE = 100

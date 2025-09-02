@@ -20,12 +20,14 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, List, Optional, Tuple
 
+from . import APP_NAME_
 from .config import get_config_path
 
 
 class KV:
-    def __init__(self, app_name: str) -> None:
-        config_folder = get_config_path(app_name)
+    def __init__(self) -> None:
+        assert APP_NAME_
+        config_folder = get_config_path(APP_NAME_)
         os.makedirs(config_folder, exist_ok=True)
         self.conn = sqlite3.connect(os.path.join(config_folder, "kv.db"))
         self.cursor = self.conn.cursor()

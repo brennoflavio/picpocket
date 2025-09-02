@@ -18,21 +18,30 @@ import functools
 import traceback
 from typing import Any, Callable
 
-from .http import post_dict
+from . import CRASH_REPORT_URL_, http
+from .kv import KV
 
 
-def crash_reporter(crash_url: str, crash_enabled_function: Callable[[], bool]):
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            try:
-                return func(*args, **kwargs)
-            except Exception:
-                if crash_enabled_function():
-                    traceback_str = traceback.format_exc()
-                    post_dict(crash_url, {"report": traceback_str})
-                raise
+def set_crash_report(enabled: bool):
+    with KV() as kv:
+        kv.put("crash.enabled", enabled)
 
-        return wrapper
 
-    return decorator
+def get_crash_report() -> bool:
+    with KV() as kv:
+        return kv.get("crash.enabled", False, True) or False
+
+
+def crash_reporter(func: Callable) -> Callable:
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> Any:
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            if get_crash_report():
+                assert CRASH_REPORT_URL_
+                traceback_str = traceback.format_exc()
+                http.post(url=CRASH_REPORT_URL_, json={"report": traceback_str})
+            raise
+
+    return wrapper

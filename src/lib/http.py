@@ -14,187 +14,114 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import json
+import json as json_
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
 from typing import Dict, Optional
 
 from .mimetypes import guess_type
 
 
-@dataclass
-class DictResponse:
-    success: bool
-    status_code: int
-    data: dict
+class Response:
+    def __init__(self, url: str, success: bool, status_code: int, data: bytes):
+        self.url = url
+        self.success = success
+        self.status_code = status_code
+        self.data = data
+        self.text = data.decode("utf-8", errors="ignore")
+
+    def json(self) -> Dict:
+        return json_.loads(self.data)
+
+    def raise_for_status(self):
+        if not self.success:
+            raise ValueError(f"Request to url {self.url} failed with error: {self.text}")
+        if self.status_code >= 300:
+            raise ValueError(
+                f"Request to url {self.url} failed with status code: {self.status_code} and error: {self.text}"
+            )
+
+    def __str__(self):
+        return f"Response(url={self.url}, success={self.success}, status_code={self.status_code}, data={self.text})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
-@dataclass
-class BinaryResponse:
-    success: bool
-    status_code: int
-    data: bytes
-
-
-def post_dict(url: str, data: Dict, headers: Optional[Dict[str, str]] = None) -> DictResponse:
-    json_data = json.dumps(data).encode("utf-8")
-
-    request_headers = {"Content-Type": "application/json"}
-    if headers:
-        request_headers.update(headers)
-
-    request = urllib.request.Request(url, data=json_data, headers=request_headers)
-
+def request(url: str, method: str, data: Optional[bytes] = None, headers: Optional[Dict[str, str]] = None) -> Response:
     try:
+        request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
         with urllib.request.urlopen(request) as response:
-            response_data = response.read().decode("utf-8")
-            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
+            return Response(url=url, success=True, status_code=response.code, data=response.read())
     except urllib.error.HTTPError as e:
-        error_data = {}
+        error_content = b""
         try:
             if e.fp:
-                error_content = e.fp.read().decode("utf-8")
-                error_data = json.loads(error_content)
+                error_content = e.fp.read()
         except Exception:
             pass
 
-        return DictResponse(success=False, status_code=e.code, data=error_data)
+        return Response(url=url, success=False, status_code=e.code, data=error_content)
     except urllib.error.URLError as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
+        return Response(url=url, success=False, status_code=0, data=str(e.reason).encode())
     except Exception as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e)})
+        return Response(url=url, success=False, status_code=0, data=str(e).encode())
 
 
-def get_dict(
+def post(url: str, json: Optional[Dict] = None, headers: Optional[Dict[str, str]] = None) -> Response:
+    data = b""
+    request_headers = {}
+    if json:
+        data = json_.dumps(json).encode("utf-8")
+        request_headers["Content-Type"] = "application/json"
+
+    if headers:
+        request_headers.update(headers)
+
+    return request(url, method="POST", data=data, headers=request_headers)
+
+
+def get(
     url: str,
     headers: Optional[Dict[str, str]] = None,
     params: Optional[Dict[str, str]] = None,
-) -> DictResponse:
+) -> Response:
+    request_headers = {}
     if params:
         query_string = urllib.parse.urlencode(params)
         url = f"{url}?{query_string}"
 
+    if headers:
+        request_headers.update(headers)
+
+    return request(url, method="GET", headers=request_headers)
+
+
+def put(url: str, json: Optional[Dict] = None, headers: Optional[Dict[str, str]] = None) -> Response:
+    data = b""
     request_headers = {}
+    if json:
+        data = json_.dumps(json).encode("utf-8")
+        request_headers["Content-Type"] = "application/json"
+
     if headers:
         request_headers.update(headers)
 
-    request = urllib.request.Request(url, headers=request_headers)
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            response_data = response.read().decode("utf-8")
-            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
-    except urllib.error.HTTPError as e:
-        error_data = {}
-        try:
-            if e.fp:
-                error_content = e.fp.read().decode("utf-8")
-                error_data = json.loads(error_content)
-        except Exception:
-            pass
-
-        return DictResponse(success=False, status_code=e.code, data=error_data)
-    except urllib.error.URLError as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
-    except Exception as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e)})
+    return request(url, method="PUT", data=data, headers=request_headers)
 
 
-def get_binary(
-    url: str,
-    headers: Optional[Dict[str, str]] = None,
-    params: Optional[Dict[str, str]] = None,
-) -> BinaryResponse:
-    if params:
-        query_string = urllib.parse.urlencode(params)
-        url = f"{url}?{query_string}"
-
+def delete(url: str, json: Optional[Dict] = None, headers: Optional[Dict[str, str]] = None) -> Response:
+    data = b""
     request_headers = {}
+    if json:
+        data = json_.dumps(json).encode("utf-8")
+        request_headers["Content-Type"] = "application/json"
+
     if headers:
         request_headers.update(headers)
 
-    request = urllib.request.Request(url, headers=request_headers)
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            response_data = response.read()
-            return BinaryResponse(success=True, status_code=response.code, data=response_data)
-    except urllib.error.HTTPError as e:
-        error_data = b""
-        try:
-            if e.fp:
-                error_data = e.fp.read()
-        except Exception:
-            pass
-
-        return BinaryResponse(success=False, status_code=e.code, data=error_data)
-    except urllib.error.URLError as e:
-        return BinaryResponse(success=False, status_code=0, data=str(e.reason).encode("utf-8"))
-    except Exception as e:
-        return BinaryResponse(success=False, status_code=0, data=str(e).encode("utf-8"))
-
-
-def put_dict(url: str, data: Dict, headers: Optional[Dict[str, str]] = None) -> DictResponse:
-    json_data = json.dumps(data).encode("utf-8")
-
-    request_headers = {"Content-Type": "application/json"}
-    if headers:
-        request_headers.update(headers)
-
-    request = urllib.request.Request(url, data=json_data, headers=request_headers, method="PUT")
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            response_data = response.read().decode("utf-8")
-            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
-    except urllib.error.HTTPError as e:
-        error_data = {}
-        try:
-            if e.fp:
-                error_content = e.fp.read().decode("utf-8")
-                error_data = json.loads(error_content)
-        except Exception:
-            pass
-
-        return DictResponse(success=False, status_code=e.code, data=error_data)
-    except urllib.error.URLError as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
-    except Exception as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e)})
-
-
-def delete_dict(url: str, data: Optional[Dict] = None, headers: Optional[Dict[str, str]] = None) -> DictResponse:
-    if data:
-        json_data = json.dumps(data).encode("utf-8")
-    else:
-        json_data = None
-
-    request_headers = {"Content-Type": "application/json"}
-    if headers:
-        request_headers.update(headers)
-
-    request = urllib.request.Request(url, data=json_data, headers=request_headers, method="DELETE")
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            response_data = response.read().decode("utf-8")
-            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
-    except urllib.error.HTTPError as e:
-        error_data = {}
-        try:
-            if e.fp:
-                error_content = e.fp.read().decode("utf-8")
-                error_data = json.loads(error_content)
-        except Exception:
-            pass
-
-        return DictResponse(success=False, status_code=e.code, data=error_data)
-    except urllib.error.URLError as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
-    except Exception as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e)})
+    return request(url, method="DELETE", data=data, headers=request_headers)
 
 
 def post_file(
@@ -204,7 +131,7 @@ def post_file(
     file_field: str,
     form_fields: Optional[Dict[str, str]] = None,
     headers: Optional[Dict[str, str]] = None,
-) -> DictResponse:
+) -> Response:
     boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
     content_type = f"multipart/form-data; boundary={boundary}"
 
@@ -233,23 +160,4 @@ def post_file(
     if headers:
         request_headers.update(headers)
 
-    request = urllib.request.Request(url, data=body, headers=request_headers, method="POST")
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            response_data = response.read().decode("utf-8")
-            return DictResponse(success=True, status_code=response.code, data=json.loads(response_data))
-    except urllib.error.HTTPError as e:
-        error_data = {}
-        try:
-            if e.fp:
-                error_content = e.fp.read().decode("utf-8")
-                error_data = json.loads(error_content)
-        except Exception:
-            pass
-
-        return DictResponse(success=False, status_code=e.code, data=error_data)
-    except urllib.error.URLError as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e.reason)})
-    except Exception as e:
-        return DictResponse(success=False, status_code=0, data={"error": str(e)})
+    return request(url, method="POST", data=body, headers=request_headers)

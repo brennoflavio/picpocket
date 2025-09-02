@@ -22,15 +22,23 @@ from typing import Any, Callable
 from .kv import KV
 
 
-def memoize(app_name: str, ttl_seconds: int):
+def hash_function_name(func: Callable) -> str:
+    function_name = f"{func.__module__}.{func.__name__}"
+    return hashlib.sha1(f"{function_name}".encode()).hexdigest()
+
+
+def hash_function_args(args, kwargs) -> str:
+    encoded_args = f"{json.dumps(args, sort_keys=True)}-{json.dumps(kwargs, sort_keys=True)}"
+    return hashlib.sha1(f"{encoded_args}".encode()).hexdigest()
+
+
+def memoize(ttl_seconds: int):
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
-            function_name = f"{func.__module__}.{func.__name__}"
-            encoded_args = f"{json.dumps(args, sort_keys=True)}-{json.dumps(kwargs, sort_keys=True)}"
-            hashed_function_name = hashlib.sha1(f"{function_name}".encode()).hexdigest()
-            hashed_encoded_args = hashlib.sha1(f"{encoded_args}".encode()).hexdigest()
-            with KV(app_name) as kv:
+            hashed_function_name = hash_function_name(func)
+            hashed_encoded_args = hash_function_args(args, kwargs)
+            with KV() as kv:
                 response = kv.get(f"memoize.{hashed_function_name}.{hashed_encoded_args}")
                 if response is not None:
                     return response
@@ -47,8 +55,7 @@ def memoize(app_name: str, ttl_seconds: int):
     return decorator
 
 
-def delete_memoized(app_name: str, function: Callable):
-    function_name = f"{function.__module__}.{function.__name__}"
-    hashed_function_name = hashlib.sha1(f"{function_name}".encode()).hexdigest()
-    with KV(app_name) as kv:
+def delete_memoized(function: Callable):
+    hashed_function_name = hash_function_name(function)
+    with KV() as kv:
         kv.delete_partial(f"memoize.{hashed_function_name}")

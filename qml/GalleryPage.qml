@@ -51,6 +51,8 @@ Page {
 
         var args = hint ? [hint] : [""];
         python.call('immich_client.timeline', args, function(result) {
+            console.log(result.previous);
+            console.log(result.next);
             galleryPage.galleryData = result;
             loadingToast.showing = false;
         });

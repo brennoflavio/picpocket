@@ -30,7 +30,7 @@ def dataclass_to_dict(func: Callable) -> Callable:
     def wrapper(*args, **kwargs) -> Any:
         response = func(*args, **kwargs)
         if is_dataclass(response):
-            return asdict(response)
+            return asdict(response)  # type: ignore
         else:
             return response
 

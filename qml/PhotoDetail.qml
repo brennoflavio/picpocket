@@ -219,6 +219,10 @@ Page {
                 anchors.fill: parent
                 source: photoDetailPage.filePath ? "file://" + photoDetailPage.filePath : ""
                 fillMode: Image.PreserveAspectFit
+                cache: false
+                asynchronous: true
+                sourceSize.width: parent.width > 0 ? parent.width * 2 : 1920
+                sourceSize.height: parent.height > 0 ? parent.height * 2 : 1080
 
                 ActivityIndicator {
                     anchors.centerIn: parent

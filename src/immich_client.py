@@ -14,7 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from src.constants import (
+    APP_NAME,
+    CRASH_REPORT_URL,
+    DEFAULT_CACHE_DAYS,
+    MAX_GALLERY_PER_PAGE,
+)
+from src.lib import setup
+
+setup(APP_NAME, CRASH_REPORT_URL)
+
 import os
+import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -23,17 +34,9 @@ from enum import Enum
 from typing import List, Optional
 from urllib.parse import urljoin
 
-from src.constants import APP_NAME, CRASH_REPORT_URL, DEFAULT_CACHE_DAYS
+import src.lib.http as http
 from src.lib.config import get_cache_path
-from src.lib.crash import crash_reporter
-from src.lib.http import (
-    delete_dict,
-    get_binary,
-    get_dict,
-    post_dict,
-    post_file,
-    put_dict,
-)
+from src.lib.crash import crash_reporter, get_crash_report, set_crash_report
 from src.lib.kv import KV
 from src.lib.memoize import delete_memoized, memoize
 from src.lib.utils import dataclass_to_dict
@@ -41,16 +44,14 @@ from src.utils import add_month, is_webp
 
 
 def set_crash_logs(crash_logs: bool):
-    with KV(APP_NAME) as kv:
-        kv.put("settings.crash.logs", crash_logs)
+    set_crash_report(crash_logs)
 
 
 def get_crash_logs() -> bool:
-    with KV(APP_NAME) as kv:
-        return kv.get("settings.crash.logs", False, True) or False
+    return get_crash_report()
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def clear_cache(path: str, days: int):
     if not os.path.exists(path):
         return
@@ -69,9 +70,9 @@ def clear_cache(path: str, days: int):
                 pass
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def cache_routine():
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         cache_days = kv.get("settings.cache.days", DEFAULT_CACHE_DAYS, True)
     thumbnail_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
     preview_folder = os.path.join(get_cache_path(APP_NAME), "preview")
@@ -88,18 +89,16 @@ class ImmichResponse:
     message: str
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def should_login() -> bool:
-    cache_routine()
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
     if not token or not url:
         return True
 
-    response = post_dict(
-        urljoin(url, "/api/auth/validateToken"),
-        {},
+    response = http.post(
+        url=urljoin(url, "/api/auth/validateToken"),
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -108,32 +107,20 @@ def should_login() -> bool:
     return True
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 @dataclass_to_dict
 def login(url: str, email: str, password: str) -> ImmichResponse:
-    response = post_dict(urljoin(url, "/api/auth/login"), {"email": email, "password": password})
+    response = http.post(url=urljoin(url, "/api/auth/login"), json={"email": email, "password": password})
+    json_response = response.json()
     if not response.success:
-        return ImmichResponse(success=False, message=response.data.get("error", "Unknown error"))
+        return ImmichResponse(success=False, message=json_response.get("error", "Unknown error"))
 
-    token = response.data.get("accessToken")
-    user_id = response.data.get("userId")
-    user_email = response.data.get("userEmail")
-    user_name = response.data.get("name")
-    is_admin = response.data.get("isAdmin")
-    profile_image_path = response.data.get("profileImagePath")
-    should_change_password = response.data.get("shouldChangePassword")
-    is_onboarded = response.data.get("isOnboarded")
+    token = json_response.get("accessToken")
 
-    with KV(APP_NAME) as kv:
-        kv.put("immich.url", url)
-        kv.put("immich.token", token)
-        kv.put("immich.user_id", user_id)
-        kv.put("immich.user_email", user_email)
-        kv.put("immich.user_name", user_name)
-        kv.put("immich.is_admin", str(is_admin))
-        kv.put("immich.profile_image_path", profile_image_path)
-        kv.put("immich.should_change_password", str(should_change_password))
-        kv.put("immich.is_onboarded", str(is_onboarded))
+    with KV() as kv:
+        kv.put_cached("immich.url", url)
+        kv.put_cached("immich.token", token)
+        kv.commit_cached()
 
     return ImmichResponse(success=True, message="Login successful")
 
@@ -145,7 +132,7 @@ class Image:
     duration: Optional[str]
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Optional[Image]:
     base_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
     os.makedirs(base_folder, exist_ok=True)
@@ -154,8 +141,8 @@ def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> O
     if os.path.isfile(file_path):
         return Image(filePath=file_path, id=image_id, duration=duration)
 
-    response = get_binary(
-        urljoin(url, f"/api/assets/{image_id}/thumbnail"),
+    response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "thumbnail"},
     )
@@ -182,69 +169,86 @@ class TimelineResponse:
     previous: str
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
-@memoize(APP_NAME, 300)
+@memoize(300)
+@crash_reporter
 @dataclass_to_dict
 def timeline(bucket: Optional[str] = None) -> TimelineResponse:
-    with KV(APP_NAME) as kv:
+    if bucket:
+        bucket_date, offset_str = bucket.split(",")
+        offset = int(offset_str)
+        current = datetime.fromisoformat(bucket_date)
+    else:
+        current = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        offset = 0
+        bucket_date = current.isoformat()
+
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
-    if not url or not token:
-        raise ValueError("Missing URL or token")
+        if not url or not token:
+            raise ValueError("Missing URL or token")
 
-    now = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if bucket:
-        current = datetime.fromisoformat(bucket)
-        previous = add_month(current, -1)
-        next_ = add_month(current, 1)
-        if next_ > datetime.now():
-            next_ = None
-    else:
-        previous = add_month(now, -1)
-        next_ = None
-        current = now
+        response = http.get(
+            url=urljoin(url, "/api/timeline/bucket"),
+            headers={"Authorization": f"Bearer {token}"},
+            params={"timeBucket": bucket_date, "visibility": "timeline"},
+        )
+        response.raise_for_status()
+        json_response = response.json()
 
-    month = current.strftime("%B")
-    bucket_date = current.isoformat()
-    response = get_dict(
-        urljoin(url, "/api/timeline/bucket"),
-        headers={"Authorization": f"Bearer {token}"},
-        params={"timeBucket": bucket_date, "visibility": "timeline"},
-    )
-    ids = response.data.get("id", [])
-    days = [x[8:10] for x in response.data.get("fileCreatedAt", [])]
-    durations = response.data.get("duration", [])
+        ids = json_response.get("id", [])[offset : offset + MAX_GALLERY_PER_PAGE]
+        days = [x[8:10] for x in json_response.get("fileCreatedAt", [])[offset : offset + MAX_GALLERY_PER_PAGE]]
+        durations = json_response.get("duration", [])[offset : offset + MAX_GALLERY_PER_PAGE]
 
-    with ThreadPoolExecutor() as pool, KV(APP_NAME) as kv:
-        futures = {}
-        for i, id_ in enumerate(ids):
-            duration = durations[i][3:8] if durations[i] else None
-            futures[id_] = pool.submit(thumbnail, url, token, id_, duration)
-            if i - 1 > 0:
-                kv.put_cached(f"photo.{id_}.previous", ids[i - 1])
-            if i + 1 < len(ids):
-                kv.put_cached(f"photo.{id_}.next", ids[i + 1])
-        kv.commit_cached()
+        if len(ids) < MAX_GALLERY_PER_PAGE:
+            previous_offset = 0
+            previous_date = add_month(current, -1)
+        else:
+            previous_offset = offset + MAX_GALLERY_PER_PAGE
+            previous_date = bucket_date
 
-    data_structure = {}
-    for id_, day in zip(ids, days):
-        if day not in data_structure:
-            data_structure[day] = []
-        result = futures[id_].result()
-        if result:
-            data_structure[day].append(result)
+        if offset == 0:
+            next_offset = 0
+            next_date = add_month(current, 1)
+            if next_date > datetime.now():
+                next_date = None
+        else:
+            next_offset = offset - MAX_GALLERY_PER_PAGE
+            next_date = bucket_date
 
-    days = []
-    for k, v in data_structure.items():
-        days.append(Day(date=f"{month} {k}", images=v))
+        with ThreadPoolExecutor() as pool:
+            futures = {}
+            for i, id_ in enumerate(ids):
+                duration = durations[i][3:8] if durations[i] else None
+                futures[id_] = pool.submit(thumbnail, url, token, id_, duration)
+                if i - 1 > 0:
+                    kv.put_cached(f"photo.{id_}.previous", ids[i - 1])
+                if i + 1 < len(ids):
+                    kv.put_cached(f"photo.{id_}.next", ids[i + 1])
+            kv.commit_cached()
 
-    return TimelineResponse(
-        month=month,
-        days=days,
-        previous=previous.isoformat(),
-        next=next_.isoformat() if next_ else None,
-    )
+        data_structure = {}
+        for id_, day in zip(ids, days):
+            future = futures.get(id_)
+            if future:
+                result = future.result()
+                if result:
+                    if day not in data_structure:
+                        data_structure[day] = []
+                    data_structure[day].append(result)
+
+        days = []
+        month = current.strftime("%B")
+        for k, v in data_structure.items():
+            days.append(Day(date=f"{month} {k}", images=v))
+
+        return TimelineResponse(
+            month=month,
+            days=days,
+            previous=f"{previous_date},{str(previous_offset)}",
+            next=f"{next_date},{str(next_offset)}" if next_date else None,
+        )
 
 
 class FileType(str, Enum):
@@ -263,7 +267,7 @@ class Preview:
     favorite: bool
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def preview_image(
     url: str,
     token: str,
@@ -272,7 +276,7 @@ def preview_image(
     file_name: str,
     favorite: bool,
 ) -> Preview:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
 
@@ -289,11 +293,12 @@ def preview_image(
             favorite=favorite,
         )
 
-    photo_response = get_binary(
-        urljoin(url, f"/api/assets/{image_id}/thumbnail"),
+    photo_response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "preview"},
     )
+    photo_response.raise_for_status()
     with open(file_path, "wb+") as f:
         f.write(photo_response.data)
 
@@ -308,7 +313,7 @@ def preview_image(
     )
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def preview_video(
     url: str,
     token: str,
@@ -317,7 +322,7 @@ def preview_video(
     file_name: str,
     favorite: bool,
 ) -> Preview:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
 
@@ -334,10 +339,11 @@ def preview_video(
             favorite=favorite,
         )
 
-    video_response = get_binary(
-        urljoin(url, f"/api/assets/{image_id}/video/playback"),
+    video_response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/video/playback"),
         headers={"Authorization": f"Bearer {token}"},
     )
+    video_response.raise_for_status()
     with open(file_path, "wb+") as f:
         f.write(video_response.data)
         f.flush()
@@ -353,10 +359,10 @@ def preview_video(
     )
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 @dataclass_to_dict
 def preview(image_id: str) -> Preview:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
@@ -368,13 +374,15 @@ def preview(image_id: str) -> Preview:
         favorite = kv.get(f"photo.{image_id}.favorite")
 
         if not file_name or not file_type or favorite is None:
-            metadata_response = get_dict(
+            metadata_response = http.get(
                 urljoin(url, f"/api/assets/{image_id}"),
                 headers={"Authorization": f"Bearer {token}"},
             )
-            file_name = metadata_response.data.get("originalFileName", "")
-            file_type = metadata_response.data.get("type", "IMAGE")
-            favorite = metadata_response.data.get("isFavorite", False)
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
+            file_type = json_response.get("type", "IMAGE")
+            favorite = json_response.get("isFavorite", False)
 
             kv.put(f"photo.{image_id}.name", file_name, ttl_seconds=300)
             kv.put(f"photo.{image_id}.type", file_type, ttl_seconds=300)
@@ -389,24 +397,26 @@ def preview(image_id: str) -> Preview:
     return preview_image(url, token, base_folder, image_id, file_name, favorite)
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def original(image_id: str) -> str:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
     if not url or not token:
         raise ValueError("Missing URL or token")
 
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         file_name = kv.get(f"photo.{image_id}.name")
 
         if not file_name:
-            metadata_response = get_dict(
-                urljoin(url, f"/api/assets/{image_id}"),
+            metadata_response = http.get(
+                url=urljoin(url, f"/api/assets/{image_id}"),
                 headers={"Authorization": f"Bearer {token}"},
             )
-            file_name = metadata_response.data.get("originalFileName", "")
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
             kv.put(f"photo.{image_id}.name", file_name, ttl_seconds=86400)
 
     base_folder = os.path.join(get_cache_path(APP_NAME), "original", image_id)
@@ -416,97 +426,94 @@ def original(image_id: str) -> str:
     if os.path.isfile(file_path):
         return file_path
 
-    photo_response = get_binary(
-        urljoin(url, f"/api/assets/{image_id}/original"),
+    photo_response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/original"),
         headers={"Authorization": f"Bearer {token}"},
     )
+    photo_response.raise_for_status()
     with open(file_path, "wb+") as f:
         f.write(photo_response.data)
 
     return file_path
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def set_cache_days(days: int):
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         kv.put("settings.cache.days", days)
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def get_cache_days() -> int:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         return kv.get("settings.cache.days", DEFAULT_CACHE_DAYS, True) or DEFAULT_CACHE_DAYS
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def logout():
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         kv.delete("immich.url")
         kv.delete("immich.token")
-        kv.delete("immich.user_id")
-        kv.delete("immich.user_email")
-        kv.delete("immich.user_name")
-        kv.delete("immich.is_admin")
-        kv.delete("immich.profile_image_path")
-        kv.delete("immich.should_change_password")
-        kv.delete("immich.is_onboarded")
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def favorite(image_id: str, favorite: bool):
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
         if not url or not token:
             raise ValueError("Missing URL or token")
 
-        put_dict(
-            urljoin(url, f"/api/assets/{image_id}"),
-            {"isFavorite": favorite},
+        response = http.put(
+            url=urljoin(url, f"/api/assets/{image_id}"),
+            json={"isFavorite": favorite},
             headers={"Authorization": f"Bearer {token}"},
         )
+        response.raise_for_status()
 
         kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def archive(image_id: str):
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
         if not url or not token:
             raise ValueError("Missing URL or token")
 
-        put_dict(
-            urljoin(url, f"/api/assets/{image_id}"),
-            {"visibility": "archive"},
+        response = http.put(
+            url=urljoin(url, f"/api/assets/{image_id}"),
+            json={"visibility": "archive"},
             headers={"Authorization": f"Bearer {token}"},
         )
-    delete_memoized(APP_NAME, timeline)
+        response.raise_for_status()
+    delete_memoized(timeline)
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def delete(image_id: str):
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
         if not url or not token:
             raise ValueError("Missing URL or token")
 
-        delete_dict(
-            urljoin(url, "/api/assets"),
-            {"ids": [image_id]},
+        response = http.delete(
+            url=urljoin(url, "/api/assets"),
+            json={"ids": [image_id]},
             headers={"Authorization": f"Bearer {token}"},
         )
-    delete_memoized(APP_NAME, timeline)
+        response.raise_for_status()
+    delete_memoized(timeline)
 
 
-@crash_reporter(CRASH_REPORT_URL, get_crash_logs)
+@crash_reporter
 def upload_photo(file_path: str) -> bool:
-    with KV(APP_NAME) as kv:
+    with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
 
@@ -527,7 +534,7 @@ def upload_photo(file_path: str) -> bool:
     }
 
     with open(file_path, "rb") as f:
-        response = post_file(
+        response = http.post_file(
             url=urljoin(url, "/api/assets"),
             file_data=f.read(),
             file_name=file_name,
@@ -535,6 +542,21 @@ def upload_photo(file_path: str) -> bool:
             form_fields=data,
             headers={"Authorization": f"Bearer {token}"},
         )
-        delete_memoized(APP_NAME, timeline)
+        response.raise_for_status()
+        delete_memoized(timeline)
         time.sleep(0.5)
         return response.success
+
+
+def delete_cache():
+    with KV() as kv:
+        kv.delete_partial("photo")
+
+    thumbnail_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
+    preview_folder = os.path.join(get_cache_path(APP_NAME), "preview")
+    original_folder = os.path.join(get_cache_path(APP_NAME), "original")
+
+    shutil.rmtree(thumbnail_folder, ignore_errors=True)
+    shutil.rmtree(preview_folder, ignore_errors=True)
+    shutil.rmtree(original_folder, ignore_errors=True)
+    delete_memoized(timeline)
