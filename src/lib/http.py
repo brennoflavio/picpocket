@@ -49,7 +49,12 @@ class Response:
         return self.__str__()
 
 
-def request(url: str, method: str, data: Optional[bytes] = None, headers: Optional[Dict[str, str]] = None) -> Response:
+def request(
+    url: str,
+    method: str,
+    data: Optional[bytes] = None,
+    headers: Optional[Dict[str, str]] = None,
+) -> Response:
     try:
         request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
         with urllib.request.urlopen(request) as response:

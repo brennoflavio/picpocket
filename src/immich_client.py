@@ -15,8 +15,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from src.constants import (
+    APP_ID,
     APP_NAME,
     CRASH_REPORT_URL,
+    CRON_DEFAULT_EXPRESSION,
+    CRON_URL,
     DEFAULT_CACHE_DAYS,
     MAX_GALLERY_PER_PAGE,
 )
@@ -559,4 +562,38 @@ def delete_cache():
     shutil.rmtree(thumbnail_folder, ignore_errors=True)
     shutil.rmtree(preview_folder, ignore_errors=True)
     shutil.rmtree(original_folder, ignore_errors=True)
+    delete_memoized(timeline)
+
+
+def persist_token(token: str):
+    with KV() as kv:
+        kv.put("ut.notification.token", token)
+
+
+@crash_reporter
+def set_auto_sync(enabled: bool):
+    with KV() as kv:
+        token = kv.get("ut.notification.token")
+        if enabled:
+            data = {
+                "appid": APP_ID,
+                "token": token,
+                "cron_expression": CRON_DEFAULT_EXPRESSION,
+            }
+            response = http.post(CRON_URL, json=data)
+            response.raise_for_status()
+        else:
+            response = http.delete(CRON_URL, json={"appid": APP_ID, "token": token})
+            response.raise_for_status()
+        kv.put("settings.sync.auto", enabled)
+
+
+@crash_reporter
+def get_auto_sync() -> bool:
+    with KV() as kv:
+        return kv.get("settings.sync.auto", False, True) or False
+
+
+@crash_reporter
+def clear_timeline_cache():
     delete_memoized(timeline)

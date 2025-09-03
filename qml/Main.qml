@@ -21,6 +21,7 @@ import QtQuick.Layouts 1.3
 import Qt.labs.settings 1.0
 import io.thp.pyotherside 1.4
 import "lib"
+import Ubuntu.PushNotifications 0.1
 
 MainView {
     id: root
@@ -30,6 +31,14 @@ MainView {
 
     width: units.gu(45)
     height: units.gu(75)
+
+    PushClient {
+            id: pushClient
+            appId: "picpocket.brennoflavio_picpocket"
+            onTokenChanged: {
+                python.call('immich_client.persist_token', [pushClient.token])
+            }
+    }
 
     PageStack {
         id: pageStack

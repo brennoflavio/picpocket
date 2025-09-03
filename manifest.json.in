@@ -7,6 +7,10 @@
         "picpocket": {
             "apparmor": "picpocket.apparmor",
             "desktop":  "picpocket.desktop"
+        },
+        "push": {
+            "apparmor": "push.apparmor",
+            "push-helper": "push.json"
         }
     },
     "version": "@BUILD_VERSION@",

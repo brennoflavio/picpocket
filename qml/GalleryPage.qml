@@ -51,8 +51,6 @@ Page {
 
         var args = hint ? [hint] : [""];
         python.call('immich_client.timeline', args, function(result) {
-            console.log(result.previous);
-            console.log(result.next);
             galleryPage.galleryData = result;
             loadingToast.showing = false;
         });
@@ -84,6 +82,18 @@ Page {
         }
         contentHeight: gallery.height
         clip: true
+
+        PullToRefresh {
+            id: pullToRefresh
+            parent: flickable
+            target: flickable
+            refreshing: loadingToast.showing
+            onRefresh: {
+                python.call('immich_client.clear_timeline_cache', [], function() {
+                    loadTimeline("")
+                })
+            }
+        }
 
         Gallery {
             id: gallery
@@ -281,7 +291,6 @@ Page {
 
                         python.call('immich_client.upload_photo', [filePath], function(result) {
                             loadingToast.showing = false
-                            console.log(result)
                             if (result) {
                                 loadTimeline("")
                             }

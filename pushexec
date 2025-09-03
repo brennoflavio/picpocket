@@ -1,0 +1,14 @@
+#!/usr/bin/python3
+
+import sys
+
+from src.background_job import sync_library
+
+out = sys.argv[2]
+in_, out = sys.argv[1:3]
+
+with open(in_) as f:
+    response = sync_library(f.read())
+
+with open(out, "w") as f:
+    f.write(response)

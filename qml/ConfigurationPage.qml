@@ -24,6 +24,7 @@ Page {
 
     property int cacheDays: 7
     property bool crashLogsEnabled: false
+    property bool autoSyncEnabled: false
 
     header: AppHeader {
         pageTitle: i18n.tr("Configuration")
@@ -48,6 +49,11 @@ Page {
                 configurationPage.crashLogsEnabled = enabled;
             }
         });
+        python.call('immich_client.get_auto_sync', [], function(enabled) {
+            if (enabled !== null && enabled !== undefined) {
+                configurationPage.autoSyncEnabled = enabled;
+            }
+        });
     }
 
     function setCacheDays(days) {
@@ -56,6 +62,10 @@ Page {
 
     function setCrashLogs(enabled) {
         python.call('immich_client.set_crash_logs', [enabled], function() {});
+    }
+
+    function setAutoSync(enabled) {
+        python.call('immich_client.set_auto_sync', [enabled], function() {});
     }
 
     function logout() {
@@ -135,6 +145,20 @@ Page {
                     }
                 }
             }
+
+            // ConfigurationGroup {
+            //     title: i18n.tr("Sync")
+
+            //     ToggleOption {
+            //         title: i18n.tr("Auto upload")
+            //         subtitle: i18n.tr("Automatically upload photos and videos to Immich")
+            //         checked: configurationPage.autoSyncEnabled
+            //         onToggled: function(checked) {
+            //             configurationPage.autoSyncEnabled = checked;
+            //             configurationPage.setAutoSync(checked);
+            //         }
+            //     }
+            // }
 
             ConfigurationGroup {
                 title: i18n.tr("Misc")
