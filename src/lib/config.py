@@ -16,17 +16,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
+from . import APP_NAME_
 
-def get_config_path(app_name: str) -> str:
+
+def get_config_path() -> str:
+    assert APP_NAME_
     xdg_config = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-    return os.path.join(xdg_config, app_name)
+    return os.path.join(xdg_config, APP_NAME_)
 
 
-def get_cache_path(app_name: str) -> str:
+def get_cache_path() -> str:
+    assert APP_NAME_
     xdg_cache = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
-    return os.path.join(xdg_cache, app_name)
+    return os.path.join(xdg_cache, APP_NAME_)
 
 
-def get_app_data_path(app_name: str) -> str:
+def get_app_data_path() -> str:
+    assert APP_NAME_
     xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-    return os.path.join(xdg_data, app_name)
+    return os.path.join(xdg_data, APP_NAME_)

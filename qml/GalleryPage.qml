@@ -45,11 +45,29 @@ Page {
         next: ""
     })
 
+    property var memoriesData: []
+
     function loadTimeline(hint) {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading photos...");
 
         var args = hint ? [hint] : [""];
+
+        // Load memories
+        python.call('immich_client.memories', [], function(memoriesResult) {
+            if (memoriesResult && memoriesResult.memories) {
+                // Convert thumbnail_url to thumbnailUrl for QML
+                galleryPage.memoriesData = memoriesResult.memories.map(function(memory) {
+                    return {
+                        title: memory.title,
+                        thumbnailUrl: memory.thumbnail_url || "",
+                        id: memory.first_image_id || ""
+                    };
+                });
+            }
+        });
+
+        // Load timeline
         python.call('immich_client.timeline', args, function(result) {
             galleryPage.galleryData = result;
             loadingToast.showing = false;
@@ -80,7 +98,7 @@ Page {
             right: parent.right
             bottom: actionBar.top
         }
-        contentHeight: gallery.height
+        contentHeight: memoriesColumn.height
         clip: true
 
         PullToRefresh {
@@ -95,17 +113,38 @@ Page {
             }
         }
 
-        Gallery {
-            id: gallery
+        Column {
+            id: memoriesColumn
             width: parent.width
-            month: galleryPage.galleryData.month
-            days: galleryPage.galleryData.days
 
-            onItemClicked: {
-                pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                    filePath: imageData.filePath,
-                    photoId: imageData.id || "",
-                })
+            Memories {
+                id: memories
+                width: parent.width
+                visible: !picturePicker.visible
+                memoriesData: galleryPage.memoriesData
+
+                onMemoryClicked: {
+                    pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
+                        isMemory: true,
+                        filePath: memoryData.thumbnailUrl || "",
+                        photoId: memoryData.id || ""
+                    })
+                }
+            }
+
+            Gallery {
+                id: gallery
+                width: parent.width
+                month: galleryPage.galleryData.month
+                days: galleryPage.galleryData.days
+
+                onItemClicked: {
+                    pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
+                        isMemory: false,
+                        filePath: imageData.filePath,
+                        photoId: imageData.id || ""
+                    })
+                }
             }
         }
     }
@@ -191,6 +230,10 @@ Page {
                 onClicked: {
                     picturePicker.visible = true
                 }
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
 
             Item {

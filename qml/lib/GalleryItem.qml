@@ -50,8 +50,8 @@ Item {
             cache: true
             asynchronous: true
             visible: source !== ""
-            sourceSize.width: parent.width * 2
-            sourceSize.height: parent.height * 2
+            sourceSize.width: parent.width
+            sourceSize.height: parent.height
         }
 
         Rectangle {

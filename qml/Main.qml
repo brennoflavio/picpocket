@@ -21,7 +21,7 @@ import QtQuick.Layouts 1.3
 import Qt.labs.settings 1.0
 import io.thp.pyotherside 1.4
 import "lib"
-import Ubuntu.PushNotifications 0.1
+import Lomiri.PushNotifications 0.1
 
 MainView {
     id: root

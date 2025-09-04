@@ -77,9 +77,9 @@ def clear_cache(path: str, days: int):
 def cache_routine():
     with KV() as kv:
         cache_days = kv.get("settings.cache.days", DEFAULT_CACHE_DAYS, True)
-    thumbnail_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
-    preview_folder = os.path.join(get_cache_path(APP_NAME), "preview")
-    original_folder = os.path.join(get_cache_path(APP_NAME), "original")
+    thumbnail_folder = os.path.join(get_cache_path(), "thumbnail")
+    preview_folder = os.path.join(get_cache_path(), "preview")
+    original_folder = os.path.join(get_cache_path(), "original")
 
     clear_cache(thumbnail_folder, cache_days or DEFAULT_CACHE_DAYS)
     clear_cache(preview_folder, cache_days or DEFAULT_CACHE_DAYS)
@@ -137,7 +137,7 @@ class Image:
 
 @crash_reporter
 def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Optional[Image]:
-    base_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
+    base_folder = os.path.join(get_cache_path(), "thumbnail")
     os.makedirs(base_folder, exist_ok=True)
     file_path = os.path.join(base_folder, f"{image_id}.webp")
 
@@ -270,6 +270,20 @@ class Preview:
     favorite: bool
 
 
+def download_photo_thumbmail(url: str, token: str, image_id: str, file_path: str):
+    if os.path.isfile(file_path):
+        return
+
+    photo_response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
+        headers={"Authorization": f"Bearer {token}"},
+        params={"size": "preview"},
+    )
+    photo_response.raise_for_status()
+    with open(file_path, "wb+") as f:
+        f.write(photo_response.data)
+
+
 @crash_reporter
 def preview_image(
     url: str,
@@ -284,26 +298,7 @@ def preview_image(
         next_ = kv.get(f"photo.{image_id}.next")
 
     file_path = os.path.join(base_folder, f"{image_id}.jpeg")
-
-    if os.path.isfile(file_path):
-        return Preview(
-            filePath=file_path,
-            id=image_id,
-            name=file_name,
-            file_type=FileType.IMAGE,
-            previous=previous,
-            next=next_,
-            favorite=favorite,
-        )
-
-    photo_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
-        headers={"Authorization": f"Bearer {token}"},
-        params={"size": "preview"},
-    )
-    photo_response.raise_for_status()
-    with open(file_path, "wb+") as f:
-        f.write(photo_response.data)
+    download_photo_thumbmail(url, token, image_id, file_path)
 
     return Preview(
         filePath=file_path,
@@ -314,6 +309,20 @@ def preview_image(
         next=next_,
         favorite=favorite,
     )
+
+
+def download_video_thumbmail(url: str, token: str, image_id: str, file_path: str):
+    if os.path.isfile(file_path):
+        return
+
+    video_response = http.get(
+        url=urljoin(url, f"/api/assets/{image_id}/video/playback"),
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    video_response.raise_for_status()
+    with open(file_path, "wb+") as f:
+        f.write(video_response.data)
+        f.flush()
 
 
 @crash_reporter
@@ -330,26 +339,7 @@ def preview_video(
         next_ = kv.get(f"photo.{image_id}.next")
 
     file_path = os.path.join(base_folder, f"{image_id}.mp4")
-
-    if os.path.isfile(file_path):
-        return Preview(
-            filePath=file_path,
-            id=image_id,
-            name=file_name,
-            file_type=FileType.VIDEO,
-            previous=previous,
-            next=next_,
-            favorite=favorite,
-        )
-
-    video_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/video/playback"),
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    video_response.raise_for_status()
-    with open(file_path, "wb+") as f:
-        f.write(video_response.data)
-        f.flush()
+    download_video_thumbmail(url, token, image_id, file_path)
 
     return Preview(
         filePath=file_path,
@@ -391,7 +381,7 @@ def preview(image_id: str) -> Preview:
             kv.put(f"photo.{image_id}.type", file_type, ttl_seconds=300)
             kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
 
-    base_folder = os.path.join(get_cache_path(APP_NAME), "preview")
+    base_folder = os.path.join(get_cache_path(), "preview")
     os.makedirs(base_folder, exist_ok=True)
 
     if file_type == "VIDEO":
@@ -422,7 +412,7 @@ def original(image_id: str) -> str:
             file_name = json_response.get("originalFileName", "")
             kv.put(f"photo.{image_id}.name", file_name, ttl_seconds=86400)
 
-    base_folder = os.path.join(get_cache_path(APP_NAME), "original", image_id)
+    base_folder = os.path.join(get_cache_path(), "original", image_id)
     os.makedirs(base_folder, exist_ok=True)
     file_path = os.path.join(base_folder, file_name)
 
@@ -555,13 +545,15 @@ def delete_cache():
     with KV() as kv:
         kv.delete_partial("photo")
 
-    thumbnail_folder = os.path.join(get_cache_path(APP_NAME), "thumbnail")
-    preview_folder = os.path.join(get_cache_path(APP_NAME), "preview")
-    original_folder = os.path.join(get_cache_path(APP_NAME), "original")
+    thumbnail_folder = os.path.join(get_cache_path(), "thumbnail")
+    preview_folder = os.path.join(get_cache_path(), "preview")
+    original_folder = os.path.join(get_cache_path(), "original")
+    memories_folder = os.path.join(get_cache_path(), "memories")
 
     shutil.rmtree(thumbnail_folder, ignore_errors=True)
     shutil.rmtree(preview_folder, ignore_errors=True)
     shutil.rmtree(original_folder, ignore_errors=True)
+    shutil.rmtree(memories_folder, ignore_errors=True)
     delete_memoized(timeline)
 
 
@@ -597,3 +589,164 @@ def get_auto_sync() -> bool:
 @crash_reporter
 def clear_timeline_cache():
     delete_memoized(timeline)
+
+
+@dataclass
+class Memory:
+    title: str
+    thumbnail_url: str
+    first_image_id: str
+
+
+@dataclass
+class MemoryContainer:
+    memories: List[Memory]
+
+
+@crash_reporter
+@dataclass_to_dict
+def memories() -> MemoryContainer:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        base_folder = os.path.join(get_cache_path(), "memories")
+        os.makedirs(base_folder, exist_ok=True)
+
+        response = http.get(
+            url=urljoin(url, "/api/memories"),
+            params={"for": datetime.now().isoformat()},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        json_response = response.json()
+        memories = []
+        for memory in json_response:
+            year = memory.get("data", {}).get("year")
+            assets = memory.get("assets", [])
+            if len(assets) == 0:
+                continue
+
+            first_asset = assets[0]
+            first_asset_type = first_asset.get("type")
+            if not first_asset_type:
+                continue
+
+            first_asset_image_id = first_asset.get("id")
+            if not first_asset_image_id:
+                continue
+
+            if first_asset_type == "VIDEO":
+                file_path = os.path.join(base_folder, f"{first_asset_image_id}.mp4")
+                download_video_thumbmail(url, token, first_asset_image_id, file_path)
+            else:
+                file_path = os.path.join(base_folder, f"{first_asset_image_id}.jpeg")
+                download_photo_thumbmail(url, token, first_asset_image_id, file_path)
+
+            memories.append(Memory(title=str(year), thumbnail_url=file_path, first_image_id=first_asset_image_id))
+
+            for i, asset in enumerate(assets):
+                asset_id = asset.get("id")
+                if i - 1 >= 0:
+                    kv.put_cached(f"memory.{asset_id}.previous", assets[i - 1]["id"], ttl_seconds=600)
+                if i + 1 < len(assets):
+                    kv.put_cached(f"memory.{asset_id}.next", assets[i + 1]["id"], ttl_seconds=600)
+            kv.commit_cached()
+
+        return MemoryContainer(memories=memories)
+
+
+@crash_reporter
+def memory_preview_video(
+    url: str,
+    token: str,
+    base_folder: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"memory.{image_id}.previous")
+        next_ = kv.get(f"memory.{image_id}.next")
+
+    file_path = os.path.join(base_folder, f"{image_id}.mp4")
+    download_video_thumbmail(url, token, image_id, file_path)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.VIDEO,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@crash_reporter
+def memory_preview_image(
+    url: str,
+    token: str,
+    base_folder: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"memory.{image_id}.previous")
+        next_ = kv.get(f"memory.{image_id}.next")
+
+    file_path = os.path.join(base_folder, f"{image_id}.jpeg")
+    download_photo_thumbmail(url, token, image_id, file_path)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.IMAGE,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@memoize(600)
+@crash_reporter
+@dataclass_to_dict
+def memory_preview(image_id: str) -> Preview:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        file_name = kv.get(f"memory.{image_id}.name")
+        file_type = kv.get(f"memory.{image_id}.type")
+        favorite = kv.get(f"memory.{image_id}.favorite")
+
+        if not file_name or not file_type or favorite is None:
+            metadata_response = http.get(
+                urljoin(url, f"/api/assets/{image_id}"),
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
+            file_type = json_response.get("type", "IMAGE")
+            favorite = json_response.get("isFavorite", False)
+
+            kv.put(f"memory.{image_id}.name", file_name, ttl_seconds=300)
+            kv.put(f"memory.{image_id}.type", file_type, ttl_seconds=300)
+            kv.put(f"memory.{image_id}.favorite", favorite, ttl_seconds=300)
+
+    base_folder = os.path.join(get_cache_path(), "memories")
+    os.makedirs(base_folder, exist_ok=True)
+
+    if file_type == "VIDEO":
+        return memory_preview_video(url, token, base_folder, image_id, file_name, favorite)
+
+    return memory_preview_image(url, token, base_folder, image_id, file_name, favorite)

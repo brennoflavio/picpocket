@@ -15,10 +15,10 @@
  */
 
 import QtQuick 2.12
-import Ubuntu.Components 1.3
-import Ubuntu.Components.Popups 1.3
+import Lomiri.Components 1.3
+import Lomiri.Components.Popups 1.3
 import QtQuick.Layouts 1.12
-import Ubuntu.Content 1.3
+import Lomiri.Content 1.3
 import QtMultimedia 5.12
 import io.thp.pyotherside 1.4
 
@@ -33,6 +33,7 @@ Page {
     property string previousId: ""
     property string nextId: ""
     property bool isFavorite: false
+    property bool isMemory: false
 
     header: PageHeader {
         id: pageHeader
@@ -52,7 +53,9 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'))
             importModule('immich_client', function() {
-                if (photoId && photoId !== "") {
+                if (isMemory) {
+                    loadMemoryDetails()
+                } else if (photoId && photoId !== "") {
                     loadPhotoDetails()
                 }
             })
@@ -84,17 +87,46 @@ Page {
         })
     }
 
+    function loadMemoryDetails() {
+        photoDetailPage.isLoading = true
+        python.call('immich_client.memory_preview', [photoId], function(result) {
+            if (result) {
+                if (result.filePath) {
+                    photoDetailPage.filePath = result.filePath
+                }
+                if (result.name) {
+                    photoDetailPage.photoName = result.name
+                }
+                if (result.file_type) {
+                    photoDetailPage.fileType = result.file_type
+                }
+                photoDetailPage.previousId = result.previous || ""
+                photoDetailPage.nextId = result.next || ""
+                photoDetailPage.isFavorite = result.favorite || false
+            }
+            photoDetailPage.isLoading = false
+        })
+    }
+
     function navigateToPrevious() {
         if (photoDetailPage.previousId && photoDetailPage.previousId !== "") {
             photoDetailPage.photoId = photoDetailPage.previousId
-            loadPhotoDetails()
+            if (isMemory) {
+                loadMemoryDetails()
+            } else {
+                loadPhotoDetails()
+            }
         }
     }
 
     function navigateToNext() {
         if (photoDetailPage.nextId && photoDetailPage.nextId !== "") {
             photoDetailPage.photoId = photoDetailPage.nextId
-            loadPhotoDetails()
+            if (isMemory) {
+                loadMemoryDetails()
+            } else {
+                loadPhotoDetails()
+            }
         }
     }
 
@@ -221,8 +253,8 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 cache: false
                 asynchronous: true
-                sourceSize.width: parent.width > 0 ? parent.width * 2 : 1920
-                sourceSize.height: parent.height > 0 ? parent.height * 2 : 1080
+                sourceSize.width: parent.width > 0 ? parent.width : 1920
+                sourceSize.height: parent.height > 0 ? parent.height : 1080
 
                 ActivityIndicator {
                     anchors.centerIn: parent
