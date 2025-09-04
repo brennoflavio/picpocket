@@ -236,10 +236,6 @@ Page {
                 Layout.fillWidth: true
             }
 
-            Item {
-                Layout.fillWidth: true
-            }
-
             AbstractButton {
                 id: nextButton
                 Layout.preferredWidth: units.gu(6)
