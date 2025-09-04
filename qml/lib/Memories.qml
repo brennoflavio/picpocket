@@ -32,7 +32,7 @@ Item {
             height: units.gu(12)
 
             onClicked: {
-                root.memoryClicked(modelData)
+                root.memoryClicked(modelData);
             }
 
             Column {

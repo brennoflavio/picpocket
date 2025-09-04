@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 import QtQuick 2.12
 import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
@@ -33,7 +32,8 @@ Page {
     property string previousId: ""
     property string nextId: ""
     property bool isFavorite: false
-    property bool isMemory: false
+    property string previewType: "timeline"
+    property string albumId: ""
 
     header: PageHeader {
         id: pageHeader
@@ -46,87 +46,55 @@ Page {
         ]
     }
 
-
     Python {
         id: python
 
         Component.onCompleted: {
-            addImportPath(Qt.resolvedUrl('../src/'))
-            importModule('immich_client', function() {
-                if (isMemory) {
-                    loadMemoryDetails()
-                } else if (photoId && photoId !== "") {
-                    loadPhotoDetails()
-                }
-            })
+            addImportPath(Qt.resolvedUrl('../src/'));
+            importModule('immich_client', function () {
+                    if (photoId && photoId !== "") {
+                        loadPhotoDetails();
+                    }
+                });
         }
 
         onError: {
-            photoDetailPage.isLoading = false
+            photoDetailPage.isLoading = false;
         }
     }
 
     function loadPhotoDetails() {
-        photoDetailPage.isLoading = true
-        python.call('immich_client.preview', [photoId], function(result) {
-            if (result) {
-                if (result.filePath) {
-                    photoDetailPage.filePath = result.filePath
+        photoDetailPage.isLoading = true;
+        python.call('immich_client.preview', [photoId, previewType, albumId], function (result) {
+                if (result) {
+                    if (result.filePath) {
+                        photoDetailPage.filePath = result.filePath;
+                    }
+                    if (result.name) {
+                        photoDetailPage.photoName = result.name;
+                    }
+                    if (result.file_type) {
+                        photoDetailPage.fileType = result.file_type;
+                    }
+                    photoDetailPage.previousId = result.previous || "";
+                    photoDetailPage.nextId = result.next || "";
+                    photoDetailPage.isFavorite = result.favorite || false;
                 }
-                if (result.name) {
-                    photoDetailPage.photoName = result.name
-                }
-                if (result.file_type) {
-                    photoDetailPage.fileType = result.file_type
-                }
-                photoDetailPage.previousId = result.previous || ""
-                photoDetailPage.nextId = result.next || ""
-                photoDetailPage.isFavorite = result.favorite || false
-            }
-            photoDetailPage.isLoading = false
-        })
-    }
-
-    function loadMemoryDetails() {
-        photoDetailPage.isLoading = true
-        python.call('immich_client.memory_preview', [photoId], function(result) {
-            if (result) {
-                if (result.filePath) {
-                    photoDetailPage.filePath = result.filePath
-                }
-                if (result.name) {
-                    photoDetailPage.photoName = result.name
-                }
-                if (result.file_type) {
-                    photoDetailPage.fileType = result.file_type
-                }
-                photoDetailPage.previousId = result.previous || ""
-                photoDetailPage.nextId = result.next || ""
-                photoDetailPage.isFavorite = result.favorite || false
-            }
-            photoDetailPage.isLoading = false
-        })
+                photoDetailPage.isLoading = false;
+            });
     }
 
     function navigateToPrevious() {
         if (photoDetailPage.previousId && photoDetailPage.previousId !== "") {
-            photoDetailPage.photoId = photoDetailPage.previousId
-            if (isMemory) {
-                loadMemoryDetails()
-            } else {
-                loadPhotoDetails()
-            }
+            photoDetailPage.photoId = photoDetailPage.previousId;
+            loadPhotoDetails();
         }
     }
 
     function navigateToNext() {
         if (photoDetailPage.nextId && photoDetailPage.nextId !== "") {
-            photoDetailPage.photoId = photoDetailPage.nextId
-            if (isMemory) {
-                loadMemoryDetails()
-            } else {
-                loadPhotoDetails()
-            }
+            photoDetailPage.photoId = photoDetailPage.nextId;
+            loadPhotoDetails();
         }
     }
 
@@ -152,26 +120,26 @@ Page {
             z: -1
 
             onPressed: {
-                startX = mouse.x
-                swiping = true
+                startX = mouse.x;
+                swiping = true;
             }
 
             onReleased: {
                 if (swiping) {
-                    var diff = mouse.x - startX
+                    var diff = mouse.x - startX;
                     if (Math.abs(diff) > units.gu(10)) {
                         if (diff > 0 && photoDetailPage.previousId !== "") {
-                            navigateToPrevious()
+                            navigateToPrevious();
                         } else if (diff < 0 && photoDetailPage.nextId !== "") {
-                            navigateToNext()
+                            navigateToNext();
                         }
                     }
                 }
-                swiping = false
+                swiping = false;
             }
 
             onCanceled: {
-                swiping = false
+                swiping = false;
             }
         }
 
@@ -190,7 +158,11 @@ Page {
                 anchors.fill: parent
                 color: theme.palette.normal.foreground
                 opacity: previousArea.pressed ? 0.3 : 0
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Behavior on opacity  {
+                    NumberAnimation {
+                        duration: 100
+                    }
+                }
             }
 
             Icon {
@@ -205,7 +177,11 @@ Page {
                 color: "white"
                 opacity: previousArea.containsMouse || previousArea.pressed ? 0.9 : 0.5
                 visible: photoDetailPage.previousId !== ""
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Behavior on opacity  {
+                    NumberAnimation {
+                        duration: 100
+                    }
+                }
             }
         }
 
@@ -224,7 +200,11 @@ Page {
                 anchors.fill: parent
                 color: theme.palette.normal.foreground
                 opacity: nextArea.pressed ? 0.3 : 0
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Behavior on opacity  {
+                    NumberAnimation {
+                        duration: 100
+                    }
+                }
             }
 
             Icon {
@@ -239,7 +219,11 @@ Page {
                 color: "white"
                 opacity: nextArea.containsMouse || nextArea.pressed ? 0.9 : 0.5
                 visible: photoDetailPage.nextId !== ""
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Behavior on opacity  {
+                    NumberAnimation {
+                        duration: 100
+                    }
+                }
             }
         }
 
@@ -286,9 +270,9 @@ Page {
                         anchors.fill: parent
                         onClicked: {
                             if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                                videoPlayer.pause()
+                                videoPlayer.pause();
                             } else {
-                                videoPlayer.play()
+                                videoPlayer.play();
                             }
                         }
                     }
@@ -341,9 +325,9 @@ Page {
                             anchors.fill: parent
                             onClicked: {
                                 if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                                    videoPlayer.pause()
+                                    videoPlayer.pause();
                                 } else {
-                                    videoPlayer.play()
+                                    videoPlayer.play();
                                 }
                             }
                         }
@@ -359,7 +343,7 @@ Page {
 
                         onValueChanged: {
                             if (pressed) {
-                                videoPlayer.seek(value)
+                                videoPlayer.seek(value);
                             }
                         }
                     }
@@ -399,21 +383,23 @@ Page {
                 Layout.fillWidth: true
 
                 AbstractButton {
+                    id: shareButtonItem
                     anchors.fill: parent
                     onClicked: {
                         if (photoDetailPage.photoId && photoDetailPage.photoId !== "") {
-                            shareButton.enabled = false
-                            python.call('immich_client.original', [photoDetailPage.photoId], function(result) {
-                                shareButton.enabled = true
-                                if (result && result !== "") {
-                                    pageStack.push(sharePage, {imageUrl: "file://" + result})
-                                }
-                            })
+                            shareButton.enabled = false;
+                            python.call('immich_client.original', [photoDetailPage.photoId], function (result) {
+                                    shareButton.enabled = true;
+                                    if (result && result !== "") {
+                                        pageStack.push(sharePage, {
+                                                "imageUrl": "file://" + result
+                                            });
+                                    }
+                                });
                         }
                     }
 
                     property alias shareButton: shareButtonItem
-                    id: shareButtonItem
 
                     Column {
                         anchors.centerIn: parent
@@ -442,10 +428,9 @@ Page {
                 AbstractButton {
                     anchors.fill: parent
                     onClicked: {
-                        var newFavoriteState = !photoDetailPage.isFavorite
-                        photoDetailPage.isFavorite = newFavoriteState
-                        python.call('immich_client.favorite', [photoDetailPage.photoId, newFavoriteState], function(result) {
-                        })
+                        var newFavoriteState = !photoDetailPage.isFavorite;
+                        photoDetailPage.isFavorite = newFavoriteState;
+                        python.call('immich_client.favorite', [photoDetailPage.photoId, newFavoriteState], function (result) {});
                     }
 
                     Column {
@@ -475,10 +460,10 @@ Page {
                 AbstractButton {
                     anchors.fill: parent
                     onClicked: {
-                        python.call('immich_client.archive', [photoDetailPage.photoId], function(result) {
-                            pageStack.clear()
-                            pageStack.push(Qt.resolvedUrl("GalleryPage.qml"))
-                        })
+                        python.call('immich_client.archive', [photoDetailPage.photoId], function (result) {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
                     }
 
                     Column {
@@ -508,10 +493,10 @@ Page {
                 AbstractButton {
                     anchors.fill: parent
                     onClicked: {
-                        python.call('immich_client.delete', [photoDetailPage.photoId], function(result) {
-                            pageStack.clear()
-                            pageStack.push(Qt.resolvedUrl("GalleryPage.qml"))
-                        })
+                        python.call('immich_client.delete', [photoDetailPage.photoId], function (result) {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
                     }
 
                     Column {
@@ -534,7 +519,6 @@ Page {
                     }
                 }
             }
-
         }
     }
 
@@ -554,9 +538,9 @@ Page {
                         iconName: "back"
                         onTriggered: {
                             if (sharePageInstance.activeTransfer) {
-                                sharePageInstance.activeTransfer.state = ContentTransfer.Aborted
+                                sharePageInstance.activeTransfer.state = ContentTransfer.Aborted;
                             }
-                            pageStack.pop()
+                            pageStack.pop();
                         }
                     }
                 ]
@@ -574,19 +558,19 @@ Page {
                 handler: ContentHandler.Share
 
                 onPeerSelected: {
-                    sharePageInstance.activeTransfer = peer.request()
+                    sharePageInstance.activeTransfer = peer.request();
                     if (sharePageInstance.activeTransfer) {
-                        sharePageInstance.activeTransfer.items = [contentItem]
-                        sharePageInstance.activeTransfer.state = ContentTransfer.Charged
-                        pageStack.pop()
+                        sharePageInstance.activeTransfer.items = [contentItem];
+                        sharePageInstance.activeTransfer.state = ContentTransfer.Charged;
+                        pageStack.pop();
                     }
                 }
 
                 onCancelPressed: {
                     if (sharePageInstance.activeTransfer) {
-                        sharePageInstance.activeTransfer.state = ContentTransfer.Aborted
+                        sharePageInstance.activeTransfer.state = ContentTransfer.Aborted;
                     }
-                    pageStack.pop()
+                    pageStack.pop();
                 }
             }
 
@@ -597,6 +581,4 @@ Page {
             }
         }
     }
-
-
 }

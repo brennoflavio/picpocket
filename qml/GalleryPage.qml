@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
@@ -31,47 +30,46 @@ Page {
         showBackButton: picturePicker.visible
         showSettingsButton: !picturePicker.visible
         onBackClicked: {
-            picturePicker.visible = false
+            picturePicker.visible = false;
         }
         onSettingsClicked: {
-            pageStack.push(Qt.resolvedUrl("ConfigurationPage.qml"))
+            pageStack.push(Qt.resolvedUrl("ConfigurationPage.qml"));
         }
     }
 
     property var galleryData: ({
-        month: "",
-        days: [],
-        previous: "",
-        next: ""
-    })
+            "month": "",
+            "days": [],
+            "previous": "",
+            "next": ""
+        })
 
     property var memoriesData: []
 
     function loadTimeline(hint) {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading photos...");
-
         var args = hint ? [hint] : [""];
 
         // Load memories
-        python.call('immich_client.memories', [], function(memoriesResult) {
-            if (memoriesResult && memoriesResult.memories) {
-                // Convert thumbnail_url to thumbnailUrl for QML
-                galleryPage.memoriesData = memoriesResult.memories.map(function(memory) {
-                    return {
-                        title: memory.title,
-                        thumbnailUrl: memory.thumbnail_url || "",
-                        id: memory.first_image_id || ""
-                    };
-                });
-            }
-        });
+        python.call('immich_client.memories', [], function (memoriesResult) {
+                if (memoriesResult && memoriesResult.memories) {
+                    // Convert thumbnail_url to thumbnailUrl for QML
+                    galleryPage.memoriesData = memoriesResult.memories.map(function (memory) {
+                            return {
+                                "title": memory.title,
+                                "thumbnailUrl": memory.thumbnail_url || "",
+                                "id": memory.first_image_id || ""
+                            };
+                        });
+                }
+            });
 
         // Load timeline
-        python.call('immich_client.timeline', args, function(result) {
-            galleryPage.galleryData = result;
-            loadingToast.showing = false;
-        });
+        python.call('immich_client.timeline', args, function (result) {
+                galleryPage.galleryData = result;
+                loadingToast.showing = false;
+            });
     }
 
     Python {
@@ -79,10 +77,9 @@ Page {
 
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
-
-            importModule('immich_client', function() {
-                loadTimeline("");
-            });
+            importModule('immich_client', function () {
+                    loadTimeline("");
+                });
         }
 
         onError: {
@@ -107,9 +104,9 @@ Page {
             target: flickable
             refreshing: loadingToast.showing
             onRefresh: {
-                python.call('immich_client.clear_timeline_cache', [], function() {
-                    loadTimeline("")
-                })
+                python.call('immich_client.clear_cache', [], function () {
+                        loadTimeline("");
+                    });
             }
         }
 
@@ -125,10 +122,10 @@ Page {
 
                 onMemoryClicked: {
                     pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                        isMemory: true,
-                        filePath: memoryData.thumbnailUrl || "",
-                        photoId: memoryData.id || ""
-                    })
+                            "previewType": "memory",
+                            "filePath": memoryData.thumbnailUrl || "",
+                            "photoId": memoryData.id || ""
+                        });
                 }
             }
 
@@ -140,10 +137,10 @@ Page {
 
                 onItemClicked: {
                     pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                        isMemory: false,
-                        filePath: imageData.filePath,
-                        photoId: imageData.id || ""
-                    })
+                            "previewType": "timeline",
+                            "filePath": imageData.filePath,
+                            "photoId": imageData.id || ""
+                        });
                 }
             }
         }
@@ -169,17 +166,19 @@ Page {
             color: theme.palette.normal.base
         }
 
-        RowLayout {
-            anchors {
-                fill: parent
-                margins: units.gu(1)
-            }
-            spacing: 0
+        Item {
+            anchors.fill: parent
 
             AbstractButton {
                 id: previousButton
-                Layout.preferredWidth: units.gu(6)
-                Layout.fillHeight: true
+                anchors {
+                    left: parent.left
+                    leftMargin: units.gu(1)
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                width: units.gu(6)
+                visible: galleryPage.galleryData.previous !== undefined && galleryPage.galleryData.previous !== ""
                 enabled: galleryPage.galleryData.previous !== "" && !loadingToast.showing
 
                 Icon {
@@ -192,54 +191,88 @@ Page {
 
                 onClicked: {
                     if (galleryPage.galleryData.previous) {
-                        loadTimeline(galleryPage.galleryData.previous)
-                        flickable.contentY = 0
+                        loadTimeline(galleryPage.galleryData.previous);
+                        flickable.contentY = 0;
                     }
                 }
             }
 
-            Item {
-                Layout.fillWidth: true
-            }
+            Row {
+                anchors.centerIn: parent
+                spacing: units.gu(4)
+                height: parent.height
 
-            AbstractButton {
-                id: uploadButton
-                Layout.preferredWidth: units.gu(6)
-                Layout.fillHeight: true
-                enabled: !loadingToast.showing
+                AbstractButton {
+                    id: albumsButton
+                    width: units.gu(6)
+                    height: parent.height
+                    enabled: !loadingToast.showing
 
-                Column {
-                    anchors.centerIn: parent
-                    spacing: units.gu(0.5)
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: units.gu(0.5)
 
-                    Icon {
-                        width: units.gu(3)
-                        height: width
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        name: "keyboard-caps-disabled"
-                        color: uploadButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                        Icon {
+                            width: units.gu(3)
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            name: "view-grid-symbolic"
+                            color: albumsButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                        }
+
+                        Label {
+                            fontSize: "small"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: i18n.tr("Albums")
+                        }
                     }
 
-                    Label {
-                        fontSize: "small"
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: i18n.tr("Upload")
+                    onClicked: {
+                        pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"));
                     }
                 }
 
-                onClicked: {
-                    picturePicker.visible = true
-                }
-            }
+                AbstractButton {
+                    id: uploadButton
+                    width: units.gu(6)
+                    height: parent.height
+                    enabled: !loadingToast.showing
 
-            Item {
-                Layout.fillWidth: true
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: units.gu(0.5)
+
+                        Icon {
+                            width: units.gu(3)
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            name: "keyboard-caps-disabled"
+                            color: uploadButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
+                        }
+
+                        Label {
+                            fontSize: "small"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: i18n.tr("Upload")
+                        }
+                    }
+
+                    onClicked: {
+                        picturePicker.visible = true;
+                    }
+                }
             }
 
             AbstractButton {
                 id: nextButton
-                Layout.preferredWidth: units.gu(6)
-                Layout.fillHeight: true
+                anchors {
+                    right: parent.right
+                    rightMargin: units.gu(1)
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                width: units.gu(6)
+                visible: galleryPage.galleryData.next !== undefined && galleryPage.galleryData.next !== ""
                 enabled: galleryPage.galleryData.next !== "" && !loadingToast.showing
 
                 Icon {
@@ -252,8 +285,8 @@ Page {
 
                 onClicked: {
                     if (galleryPage.galleryData.next) {
-                        loadTimeline(galleryPage.galleryData.next)
-                        flickable.contentY = 0
+                        loadTimeline(galleryPage.galleryData.next);
+                        flickable.contentY = 0;
                     }
                 }
             }
@@ -273,14 +306,14 @@ Page {
         visible: flickable.contentY > units.gu(10)
         opacity: visible ? 1.0 : 0.0
 
-        Behavior on opacity {
+        Behavior on opacity  {
             NumberAnimation {
                 duration: 200
             }
         }
 
         onClicked: {
-            flickable.contentY = 0
+            flickable.contentY = 0;
         }
 
         Rectangle {
@@ -315,33 +348,58 @@ Page {
         contentType: ContentType.Pictures
         handler: ContentHandler.Source
 
+        property int uploadIndex: 0
+        property int totalFiles: 0
+        property var filesToUpload: []
+
+        function uploadNextFile() {
+            if (uploadIndex < filesToUpload.length) {
+                var filePath = filesToUpload[uploadIndex];
+                loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(uploadIndex + 1).arg(totalFiles);
+                python.call('immich_client.upload_immich_photo', [filePath], function (result) {
+                        uploadIndex++;
+                        if (uploadIndex < filesToUpload.length) {
+                            uploadNextFile();
+                        } else {
+                            loadingToast.showing = false;
+                            loadTimeline("");
+                            uploadIndex = 0;
+                            totalFiles = 0;
+                            filesToUpload = [];
+                        }
+                    });
+            }
+        }
+
         onPeerSelected: {
-            var transfer = peer.request(contentStore)
-            transfer.selectionType = ContentTransfer.Single
-
-            transfer.stateChanged.connect(function() {
-                if (transfer.state === ContentTransfer.Charged) {
-                    if (transfer.items.length > 0) {
-                        var fileUrl = transfer.items[0].url.toString()
-                        var filePath = fileUrl.replace("file://", "")
-
-                        loadingToast.message = i18n.tr("Uploading photo...")
-                        loadingToast.showing = true
-
-                        python.call('immich_client.upload_photo', [filePath], function(result) {
-                            loadingToast.showing = false
-                            if (result) {
-                                loadTimeline("")
+            var transfer = peer.request(contentStore);
+            transfer.selectionType = ContentTransfer.Multiple;
+            transfer.stateChanged.connect(function () {
+                    if (transfer.state === ContentTransfer.Charged) {
+                        if (transfer.items.length > 0) {
+                            filesToUpload = [];
+                            for (var i = 0; i < transfer.items.length; i++) {
+                                var fileUrl = transfer.items[i].url.toString();
+                                var filePath = fileUrl.replace("file://", "");
+                                filesToUpload.push(filePath);
                             }
-                        })
+                            totalFiles = filesToUpload.length;
+                            uploadIndex = 0;
+                            if (totalFiles === 1) {
+                                loadingToast.message = i18n.tr("Uploading photo...");
+                            } else {
+                                loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(1).arg(totalFiles);
+                            }
+                            loadingToast.showing = true;
+                            uploadNextFile();
+                        }
+                        picturePicker.visible = false;
                     }
-                    picturePicker.visible = false
-                }
-            })
+                });
         }
 
         onCancelPressed: {
-            picturePicker.visible = false
+            picturePicker.visible = false;
         }
     }
 }

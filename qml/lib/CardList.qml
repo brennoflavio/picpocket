@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
@@ -21,30 +20,34 @@ import QtQuick.Layouts 1.3
 ListView {
     id: cardList
 
-    property var cards: []
+    property var albums: []
 
-    signal cardClicked(var cardId, string cardName)
+    signal albumClicked(var albumId, string albumName)
 
     width: parent.width
-    spacing: units.gu(2)
+    spacing: units.gu(1)
     clip: true
 
-    model: cards
+    model: albums
 
     delegate: Card {
         id: card
+        width: parent.width - units.gu(4)
         anchors.horizontalCenter: parent.horizontalCenter
-        name: modelData.name
+        albumName: modelData.name || ""
+        thumbnailSource: modelData.thumbnailUrl || ""
+        itemCount: modelData.itemCount || 0
+        description: modelData.description || ""
 
         onClicked: {
-            cardList.cardClicked(modelData.id, modelData.name);
+            cardList.albumClicked(modelData.id, modelData.name);
         }
     }
 
     Label {
-        visible: cards.length === 0
+        visible: albums.length === 0
         anchors.centerIn: parent
-        text: i18n.tr("No data")
+        text: i18n.tr("No albums")
         fontSize: "large"
         color: theme.palette.normal.backgroundSecondaryText
     }

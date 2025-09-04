@@ -29,21 +29,27 @@ setup(APP_NAME, CRASH_REPORT_URL)
 
 import os
 import shutil
-import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import src.lib.http as http
+from src.immich_utils import (
+    download_original,
+    download_photo_preview,
+    download_thumbnail,
+    download_video_preview,
+    upload_photo,
+)
 from src.lib.config import get_cache_path
 from src.lib.crash import crash_reporter, get_crash_report, set_crash_report
 from src.lib.kv import KV
 from src.lib.memoize import delete_memoized, memoize
 from src.lib.utils import dataclass_to_dict
-from src.utils import add_month, is_webp
+from src.utils import add_month
 
 
 def set_crash_logs(crash_logs: bool):
@@ -52,38 +58,6 @@ def set_crash_logs(crash_logs: bool):
 
 def get_crash_logs() -> bool:
     return get_crash_report()
-
-
-@crash_reporter
-def clear_cache(path: str, days: int):
-    if not os.path.exists(path):
-        return
-
-    current_time = time.time()
-    age_limit = days * 24 * 60 * 60
-
-    for root, _, files in os.walk(path):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            try:
-                file_age = current_time - os.path.getmtime(file_path)
-                if file_age > age_limit:
-                    os.remove(file_path)
-            except (OSError, IOError):
-                pass
-
-
-@crash_reporter
-def cache_routine():
-    with KV() as kv:
-        cache_days = kv.get("settings.cache.days", DEFAULT_CACHE_DAYS, True)
-    thumbnail_folder = os.path.join(get_cache_path(), "thumbnail")
-    preview_folder = os.path.join(get_cache_path(), "preview")
-    original_folder = os.path.join(get_cache_path(), "original")
-
-    clear_cache(thumbnail_folder, cache_days or DEFAULT_CACHE_DAYS)
-    clear_cache(preview_folder, cache_days or DEFAULT_CACHE_DAYS)
-    clear_cache(original_folder, cache_days or DEFAULT_CACHE_DAYS)
 
 
 @dataclass
@@ -137,25 +111,8 @@ class Image:
 
 @crash_reporter
 def thumbnail(url: str, token: str, image_id: str, duration: Optional[str]) -> Optional[Image]:
-    base_folder = os.path.join(get_cache_path(), "thumbnail")
-    os.makedirs(base_folder, exist_ok=True)
-    file_path = os.path.join(base_folder, f"{image_id}.webp")
-
-    if os.path.isfile(file_path):
-        return Image(filePath=file_path, id=image_id, duration=duration)
-
-    response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
-        headers={"Authorization": f"Bearer {token}"},
-        params={"size": "thumbnail"},
-    )
-    data = response.data
-    if is_webp(data):
-        with open(file_path, "wb+") as f:
-            f.write(data)
-        return Image(filePath=file_path, id=image_id, duration=duration)
-    else:
-        return None
+    file_path = download_thumbnail(url, token, image_id)
+    return Image(filePath=file_path, id=image_id, duration=duration)
 
 
 @dataclass
@@ -169,7 +126,7 @@ class TimelineResponse:
     month: str
     days: List[Day]
     next: Optional[str]
-    previous: str
+    previous: Optional[str]
 
 
 @memoize(300)
@@ -225,7 +182,7 @@ def timeline(bucket: Optional[str] = None) -> TimelineResponse:
             for i, id_ in enumerate(ids):
                 duration = durations[i][3:8] if durations[i] else None
                 futures[id_] = pool.submit(thumbnail, url, token, id_, duration)
-                if i - 1 > 0:
+                if i - 1 >= 0:
                     kv.put_cached(f"photo.{id_}.previous", ids[i - 1])
                 if i + 1 < len(ids):
                     kv.put_cached(f"photo.{id_}.next", ids[i + 1])
@@ -270,25 +227,10 @@ class Preview:
     favorite: bool
 
 
-def download_photo_thumbmail(url: str, token: str, image_id: str, file_path: str):
-    if os.path.isfile(file_path):
-        return
-
-    photo_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
-        headers={"Authorization": f"Bearer {token}"},
-        params={"size": "preview"},
-    )
-    photo_response.raise_for_status()
-    with open(file_path, "wb+") as f:
-        f.write(photo_response.data)
-
-
 @crash_reporter
 def preview_image(
     url: str,
     token: str,
-    base_folder: str,
     image_id: str,
     file_name: str,
     favorite: bool,
@@ -297,8 +239,7 @@ def preview_image(
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
 
-    file_path = os.path.join(base_folder, f"{image_id}.jpeg")
-    download_photo_thumbmail(url, token, image_id, file_path)
+    file_path = download_photo_preview(url, token, image_id)
 
     return Preview(
         filePath=file_path,
@@ -311,25 +252,10 @@ def preview_image(
     )
 
 
-def download_video_thumbmail(url: str, token: str, image_id: str, file_path: str):
-    if os.path.isfile(file_path):
-        return
-
-    video_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/video/playback"),
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    video_response.raise_for_status()
-    with open(file_path, "wb+") as f:
-        f.write(video_response.data)
-        f.flush()
-
-
 @crash_reporter
 def preview_video(
     url: str,
     token: str,
-    base_folder: str,
     image_id: str,
     file_name: str,
     favorite: bool,
@@ -338,8 +264,7 @@ def preview_video(
         previous = kv.get(f"photo.{image_id}.previous")
         next_ = kv.get(f"photo.{image_id}.next")
 
-    file_path = os.path.join(base_folder, f"{image_id}.mp4")
-    download_video_thumbmail(url, token, image_id, file_path)
+    file_path = download_video_preview(url, token, image_id)
 
     return Preview(
         filePath=file_path,
@@ -354,7 +279,7 @@ def preview_video(
 
 @crash_reporter
 @dataclass_to_dict
-def preview(image_id: str) -> Preview:
+def timeline_preview(image_id: str) -> Preview:
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -381,52 +306,15 @@ def preview(image_id: str) -> Preview:
             kv.put(f"photo.{image_id}.type", file_type, ttl_seconds=300)
             kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
 
-    base_folder = os.path.join(get_cache_path(), "preview")
-    os.makedirs(base_folder, exist_ok=True)
-
     if file_type == "VIDEO":
-        return preview_video(url, token, base_folder, image_id, file_name, favorite)
+        return preview_video(url, token, image_id, file_name, favorite)
 
-    return preview_image(url, token, base_folder, image_id, file_name, favorite)
+    return preview_image(url, token, image_id, file_name, favorite)
 
 
 @crash_reporter
 def original(image_id: str) -> str:
-    with KV() as kv:
-        url = kv.get("immich.url")
-        token = kv.get("immich.token")
-
-    if not url or not token:
-        raise ValueError("Missing URL or token")
-
-    with KV() as kv:
-        file_name = kv.get(f"photo.{image_id}.name")
-
-        if not file_name:
-            metadata_response = http.get(
-                url=urljoin(url, f"/api/assets/{image_id}"),
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            metadata_response.raise_for_status()
-            json_response = metadata_response.json()
-            file_name = json_response.get("originalFileName", "")
-            kv.put(f"photo.{image_id}.name", file_name, ttl_seconds=86400)
-
-    base_folder = os.path.join(get_cache_path(), "original", image_id)
-    os.makedirs(base_folder, exist_ok=True)
-    file_path = os.path.join(base_folder, file_name)
-
-    if os.path.isfile(file_path):
-        return file_path
-
-    photo_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/original"),
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    photo_response.raise_for_status()
-    with open(file_path, "wb+") as f:
-        f.write(photo_response.data)
-
+    file_path = download_original(image_id)
     return file_path
 
 
@@ -504,43 +392,6 @@ def delete(image_id: str):
     delete_memoized(timeline)
 
 
-@crash_reporter
-def upload_photo(file_path: str) -> bool:
-    with KV() as kv:
-        url = kv.get("immich.url")
-        token = kv.get("immich.token")
-
-        if not url or not token:
-            raise ValueError("Missing URL or token")
-
-    stat_info = os.stat(file_path)
-    modified_time = datetime.fromtimestamp(stat_info.st_mtime).isoformat()
-    creation_time = datetime.fromtimestamp(stat_info.st_ctime).isoformat()
-
-    file_name = file_path.split("/")[-1]
-    now_ts = int(datetime.now().timestamp())
-    data = {
-        "deviceAssetId": f"ubuntu-touch-{file_name}-{now_ts}",
-        "deviceId": "ubuntu-touch",
-        "fileCreatedAt": creation_time,
-        "fileModifiedAt": modified_time,
-    }
-
-    with open(file_path, "rb") as f:
-        response = http.post_file(
-            url=urljoin(url, "/api/assets"),
-            file_data=f.read(),
-            file_name=file_name,
-            file_field="assetData",
-            form_fields=data,
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        response.raise_for_status()
-        delete_memoized(timeline)
-        time.sleep(0.5)
-        return response.success
-
-
 def delete_cache():
     with KV() as kv:
         kv.delete_partial("photo")
@@ -549,12 +400,16 @@ def delete_cache():
     preview_folder = os.path.join(get_cache_path(), "preview")
     original_folder = os.path.join(get_cache_path(), "original")
     memories_folder = os.path.join(get_cache_path(), "memories")
+    picpocket_folder = os.path.join(get_cache_path(), "picpocket")
 
     shutil.rmtree(thumbnail_folder, ignore_errors=True)
     shutil.rmtree(preview_folder, ignore_errors=True)
     shutil.rmtree(original_folder, ignore_errors=True)
     shutil.rmtree(memories_folder, ignore_errors=True)
+    shutil.rmtree(picpocket_folder, ignore_errors=True)
     delete_memoized(timeline)
+    delete_memoized(memories)
+    delete_memoized(albums)
 
 
 def persist_token(token: str):
@@ -587,8 +442,16 @@ def get_auto_sync() -> bool:
 
 
 @crash_reporter
-def clear_timeline_cache():
+def clear_cache():
+    with KV() as kv:
+        kv.delete_partial("photo")
+        kv.delete_partial("album")
+        kv.delete_partial("memory")
     delete_memoized(timeline)
+    delete_memoized(memories)
+    delete_memoized(albums)
+    delete_memoized(get_album_assets)
+    delete_memoized(album_detail)
 
 
 @dataclass
@@ -603,6 +466,7 @@ class MemoryContainer:
     memories: List[Memory]
 
 
+@memoize(43200)
 @crash_reporter
 @dataclass_to_dict
 def memories() -> MemoryContainer:
@@ -612,9 +476,6 @@ def memories() -> MemoryContainer:
 
         if not url or not token:
             raise ValueError("Missing URL or token")
-
-        base_folder = os.path.join(get_cache_path(), "memories")
-        os.makedirs(base_folder, exist_ok=True)
 
         response = http.get(
             url=urljoin(url, "/api/memories"),
@@ -639,13 +500,7 @@ def memories() -> MemoryContainer:
             if not first_asset_image_id:
                 continue
 
-            if first_asset_type == "VIDEO":
-                file_path = os.path.join(base_folder, f"{first_asset_image_id}.mp4")
-                download_video_thumbmail(url, token, first_asset_image_id, file_path)
-            else:
-                file_path = os.path.join(base_folder, f"{first_asset_image_id}.jpeg")
-                download_photo_thumbmail(url, token, first_asset_image_id, file_path)
-
+            file_path = download_thumbnail(url, token, first_asset_image_id)
             memories.append(Memory(title=str(year), thumbnail_url=file_path, first_image_id=first_asset_image_id))
 
             for i, asset in enumerate(assets):
@@ -663,7 +518,6 @@ def memories() -> MemoryContainer:
 def memory_preview_video(
     url: str,
     token: str,
-    base_folder: str,
     image_id: str,
     file_name: str,
     favorite: bool,
@@ -672,8 +526,7 @@ def memory_preview_video(
         previous = kv.get(f"memory.{image_id}.previous")
         next_ = kv.get(f"memory.{image_id}.next")
 
-    file_path = os.path.join(base_folder, f"{image_id}.mp4")
-    download_video_thumbmail(url, token, image_id, file_path)
+    file_path = download_video_preview(url, token, image_id)
 
     return Preview(
         filePath=file_path,
@@ -690,7 +543,6 @@ def memory_preview_video(
 def memory_preview_image(
     url: str,
     token: str,
-    base_folder: str,
     image_id: str,
     file_name: str,
     favorite: bool,
@@ -699,8 +551,7 @@ def memory_preview_image(
         previous = kv.get(f"memory.{image_id}.previous")
         next_ = kv.get(f"memory.{image_id}.next")
 
-    file_path = os.path.join(base_folder, f"{image_id}.jpeg")
-    download_photo_thumbmail(url, token, image_id, file_path)
+    file_path = download_photo_preview(url, token, image_id)
 
     return Preview(
         filePath=file_path,
@@ -713,7 +564,6 @@ def memory_preview_image(
     )
 
 
-@memoize(600)
 @crash_reporter
 @dataclass_to_dict
 def memory_preview(image_id: str) -> Preview:
@@ -743,10 +593,278 @@ def memory_preview(image_id: str) -> Preview:
             kv.put(f"memory.{image_id}.type", file_type, ttl_seconds=300)
             kv.put(f"memory.{image_id}.favorite", favorite, ttl_seconds=300)
 
-    base_folder = os.path.join(get_cache_path(), "memories")
-    os.makedirs(base_folder, exist_ok=True)
+    if file_type == "VIDEO":
+        return memory_preview_video(url, token, image_id, file_name, favorite)
+
+    return memory_preview_image(url, token, image_id, file_name, favorite)
+
+
+@dataclass
+class Album:
+    id: str
+    file_path: str
+    name: str
+    asset_count: int
+    shared: bool
+
+
+@dataclass
+class Albums:
+    albums: List[Album]
+
+
+@memoize(300)
+@dataclass_to_dict
+def albums():
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.get(
+            url=urljoin(url, "/api/albums"),
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        json_response = response.json()
+
+        final_response = []
+        for album in json_response:
+            id_ = album.get("id")
+            name = album.get("albumName", "")
+            asset_count = album.get("assetCount", 0)
+            shared = album.get("shared", False)
+
+            thumbnail_asset_id = album.get("albumThumbnailAssetId")
+
+            if not id_ or not thumbnail_asset_id:
+                continue
+
+            file_path = download_thumbnail(url, token, thumbnail_asset_id)
+            final_response.append(Album(id=id_, file_path=file_path, name=name, asset_count=asset_count, shared=shared))
+
+    return Albums(albums=final_response)
+
+
+@crash_reporter
+def upload_immich_photo(file_path: str) -> bool:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        return upload_photo(url, token, file_path, wait=True)
+
+
+@memoize(300)
+def get_album_assets(url: str, token: str, album_id: str) -> List[Dict]:
+    response = http.get(
+        url=urljoin(url, f"/api/albums/{album_id}"),
+        params={"withoutAssets": "false"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    response.raise_for_status()
+    json_response = response.json()
+    return json_response.get("assets", [])
+
+
+@memoize(300)
+@crash_reporter
+@dataclass_to_dict
+def album_detail(album_id: str, bucket: Optional[str] = None) -> Optional[TimelineResponse]:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        if bucket:
+            index = int(bucket)
+        else:
+            index = 0
+
+        album_assets = get_album_assets(url, token, album_id)
+        if not album_assets:
+            return
+
+        filtered_index_assets = album_assets[index:]
+        filtered_assets = []
+        first_asset_month = None
+        for i, asset in enumerate(filtered_index_assets):
+            asset_month = datetime.fromisoformat(asset["fileCreatedAt"][:19]).strftime("%B")
+            if not first_asset_month:
+                first_asset_month = asset_month
+            if asset_month != first_asset_month or len(filtered_assets) >= MAX_GALLERY_PER_PAGE:
+                break
+            filtered_assets.append(asset)
+
+        if len(filtered_assets) == 0 or not first_asset_month:
+            return
+
+        if index == 0:
+            next_bucket = None
+        elif index - MAX_GALLERY_PER_PAGE < 0:
+            next_bucket = str(0)
+        else:
+            next_bucket = str(index - MAX_GALLERY_PER_PAGE)
+
+        if len(filtered_assets) == len(filtered_index_assets):
+            previous_bucket = None
+        else:
+            previous_bucket = str(index + len(filtered_assets))
+
+        with ThreadPoolExecutor() as pool:
+            futures = {}
+            for i, asset in enumerate(filtered_assets):
+                id_ = asset.get("id")
+                if not id_:
+                    continue
+
+                duration = asset.get("duration")
+                if not duration:
+                    parsed_duration = None
+                else:
+                    only_zeros = int(duration.replace(".", "").replace(":", "")) == 0
+                    if only_zeros:
+                        parsed_duration = None
+                    else:
+                        parsed_duration = duration[3:8]
+
+                futures[id_] = pool.submit(thumbnail, url, token, id_, parsed_duration)
+                if i - 1 >= 0:
+                    previous_asset_id = filtered_assets[i - 1].get("id")
+                    kv.put_cached(f"album.{album_id}.photo.{id_}.previous", previous_asset_id)
+                if i + 1 < len(filtered_assets):
+                    next_asset_id = filtered_assets[i + 1].get("id")
+                    kv.put_cached(f"album.{album_id}.photo.{id_}.next", next_asset_id)
+            kv.commit_cached()
+
+        data_structure = {}
+        for asset in filtered_assets:
+            id_ = asset.get("id")
+            if not id_:
+                continue
+            future = futures.get(id_)
+            if future:
+                result = future.result()
+                if result:
+                    day = asset.get("fileCreatedAt", "")[8:10]
+                    if day not in data_structure:
+                        data_structure[day] = []
+                    data_structure[day].append(result)
+
+        days = []
+        for k, v in data_structure.items():
+            days.append(Day(date=f"{first_asset_month} {k}", images=v))
+
+        return TimelineResponse(
+            month=first_asset_month,
+            days=days,
+            previous=previous_bucket,
+            next=next_bucket,
+        )
+
+
+@crash_reporter
+def album_preview_video(
+    url: str,
+    token: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+    album_id: str,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"album.{album_id}.photo.{image_id}.previous")
+        next_ = kv.get(f"album.{album_id}.photo.{image_id}.next")
+
+    file_path = download_video_preview(url, token, image_id)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.VIDEO,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@crash_reporter
+def album_preview_image(
+    url: str,
+    token: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+    album_id: str,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"album.{album_id}.photo.{image_id}.previous")
+        next_ = kv.get(f"album.{album_id}.photo.{image_id}.next")
+
+    file_path = download_photo_preview(url, token, image_id)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.IMAGE,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@crash_reporter
+@dataclass_to_dict
+def album_preview(image_id: str, album_id: str) -> Preview:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        file_name = kv.get(f"album.{album_id}.photo.{image_id}.name")
+        file_type = kv.get(f"album.{album_id}.photo.{image_id}.type")
+        favorite = kv.get(f"album.{album_id}.photo.{image_id}.favorite")
+
+        if not file_name or not file_type or favorite is None:
+            metadata_response = http.get(
+                urljoin(url, f"/api/assets/{image_id}"),
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
+            file_type = json_response.get("type", "IMAGE")
+            favorite = json_response.get("isFavorite", False)
+
+            kv.put(f"album.{album_id}.photo.{image_id}.name", file_name, ttl_seconds=300)
+            kv.put(f"album.{album_id}.photo.{image_id}.type", file_type, ttl_seconds=300)
+            kv.put(f"album.{album_id}.photo.{image_id}.favorite", favorite, ttl_seconds=300)
 
     if file_type == "VIDEO":
-        return memory_preview_video(url, token, base_folder, image_id, file_name, favorite)
+        return album_preview_video(url, token, image_id, file_name, favorite, album_id)
 
-    return memory_preview_image(url, token, base_folder, image_id, file_name, favorite)
+    return album_preview_image(url, token, image_id, file_name, favorite, album_id)
+
+
+@crash_reporter
+@dataclass_to_dict
+def preview(image_id: str, type: str, album_id: str = "") -> Preview:
+    if type == "timeline":
+        return timeline_preview(image_id)
+    elif type == "memory":
+        return memory_preview(image_id)
+    elif type == "album":
+        return album_preview(image_id, album_id)
+    else:
+        raise ValueError(f"no preview for type f{type}")

@@ -13,52 +13,111 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
 
-Rectangle {
+Item {
     id: card
 
-    property string name: ""
-    property alias backgroundColor: card.color
-    property alias textColor: serverText.color
+    property string albumName: ""
+    property string thumbnailSource: ""
+    property int itemCount: 0
+    property string description: ""
+    property alias backgroundColor: background.color
 
     signal clicked
 
-    width: parent.width - units.gu(4)
+    width: parent.width
     height: units.gu(10)
-    color: "#c8e6c9"
-    radius: units.gu(1)
 
-    MouseArea {
+    Rectangle {
+        id: background
         anchors.fill: parent
-        onClicked: card.clicked()
-    }
+        color: "transparent"
+        radius: units.gu(1)
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.margins: units.gu(2)
-        spacing: units.gu(2)
-
-        Icon {
-            id: userIcon
-            name: "contact"
-            width: units.gu(4)
-            height: units.gu(4)
-            color: "#2e7d32"
-            Layout.alignment: Qt.AlignVCenter
+        MouseArea {
+            anchors.fill: parent
+            onClicked: card.clicked()
         }
 
-        Label {
-            id: serverText
-            text: card.name
-            fontSize: "medium"
-            color: "#1b5e20"
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
-            elide: Text.ElideRight
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: units.gu(1)
+            spacing: units.gu(2)
+
+            Rectangle {
+                id: thumbnailContainer
+                width: units.gu(8)
+                height: units.gu(8)
+                radius: units.gu(1)
+                color: theme.palette.normal.base
+                clip: true
+                Layout.alignment: Qt.AlignVCenter
+
+                Image {
+                    id: thumbnail
+                    anchors.fill: parent
+                    source: card.thumbnailSource
+                    fillMode: Image.PreserveAspectCrop
+                    visible: source !== ""
+                    layer.enabled: true
+                    layer.effect: ShaderEffect {
+                        property real radius: units.gu(1)
+                        property size size: Qt.size(thumbnail.width, thumbnail.height)
+                        fragmentShader: "
+                            varying highp vec2 qt_TexCoord0;
+                            uniform sampler2D source;
+                            uniform highp float radius;
+                            uniform highp vec2 size;
+                            uniform lowp float qt_Opacity;
+                            void main() {
+                                highp vec2 tc = qt_TexCoord0 * size;
+                                highp float dx = min(tc.x, size.x - tc.x);
+                                highp float dy = min(tc.y, size.y - tc.y);
+                                if (dx < radius && dy < radius) {
+                                    highp float d = radius - distance(vec2(dx, dy), vec2(radius, radius));
+                                    gl_FragColor = texture2D(source, qt_TexCoord0) * qt_Opacity * smoothstep(-1.0, 0.0, d);
+                                } else {
+                                    gl_FragColor = texture2D(source, qt_TexCoord0) * qt_Opacity;
+                                }
+                            }
+                        "
+                    }
+                }
+
+                Icon {
+                    anchors.centerIn: parent
+                    name: "stock_image"
+                    width: units.gu(4)
+                    height: units.gu(4)
+                    color: theme.palette.normal.backgroundSecondaryText
+                    visible: thumbnail.source === ""
+                }
+            }
+
+            Column {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: units.gu(0.5)
+
+                Label {
+                    text: card.albumName
+                    fontSize: "medium"
+                    color: theme.palette.normal.foregroundText
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+
+                Label {
+                    text: card.description ? i18n.tr("%1 items • %2").arg(card.itemCount).arg(card.description) : i18n.tr("%1 items").arg(card.itemCount)
+                    fontSize: "small"
+                    color: theme.palette.normal.backgroundTertiaryText
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+            }
         }
     }
 }

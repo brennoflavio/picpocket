@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 import QtQuick 2.7
 import Lomiri.Components 1.3
 
@@ -31,11 +30,13 @@ Item {
     MouseArea {
         anchors.fill: parent
         enabled: toast.showing
-        onClicked: {
-            // Block click events from going through
+        onClicked:
+        // Block click events from going through
+        {
         }
-        onPressed: {
-            // Block press events from going through
+        onPressed:
+        // Block press events from going through
+        {
         }
     }
 
