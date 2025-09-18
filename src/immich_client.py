@@ -23,7 +23,7 @@ from src.constants import (
     DEFAULT_CACHE_DAYS,
     MAX_GALLERY_PER_PAGE,
 )
-from src.lib import setup
+from src.ut_components import setup
 
 setup(APP_NAME, CRASH_REPORT_URL)
 
@@ -36,19 +36,20 @@ from enum import Enum
 from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
-import src.lib.http as http
+import src.ut_components.http as http
 from src.immich_utils import (
     download_original,
+    download_people_thumbnail,
     download_photo_preview,
     download_thumbnail,
     download_video_preview,
     upload_photo,
 )
-from src.lib.config import get_cache_path
-from src.lib.crash import crash_reporter, get_crash_report, set_crash_report
-from src.lib.kv import KV
-from src.lib.memoize import delete_memoized, memoize
-from src.lib.utils import dataclass_to_dict
+from src.ut_components.config import get_cache_path
+from src.ut_components.crash import crash_reporter, get_crash_report, set_crash_report
+from src.ut_components.kv import KV
+from src.ut_components.memoize import delete_memoized, memoize
+from src.ut_components.utils import dataclass_to_dict
 from src.utils import add_month
 
 
@@ -452,6 +453,7 @@ def clear_cache():
     delete_memoized(albums)
     delete_memoized(get_album_assets)
     delete_memoized(album_detail)
+    delete_memoized(people)
 
 
 @dataclass
@@ -859,12 +861,248 @@ def album_preview(image_id: str, album_id: str) -> Preview:
 
 @crash_reporter
 @dataclass_to_dict
-def preview(image_id: str, type: str, album_id: str = "") -> Preview:
+def preview(image_id: str, type: str, album_id: str = "", person_id: str = "") -> Preview:
     if type == "timeline":
         return timeline_preview(image_id)
     elif type == "memory":
         return memory_preview(image_id)
     elif type == "album":
         return album_preview(image_id, album_id)
+    elif type == "person":
+        return person_preview(image_id, person_id)
     else:
-        raise ValueError(f"no preview for type f{type}")
+        raise ValueError(f"no preview for type {type}")
+
+
+@dataclass
+class People:
+    id: str
+    name: str
+    face_path: str
+
+
+@dataclass
+class PeopleResponse:
+    people: List[People]
+    next: Optional[str] = None
+    previous: Optional[str] = None
+
+
+@crash_reporter
+# @memoize(3600)
+@dataclass_to_dict
+def people(bucket: str = "") -> PeopleResponse:
+    if bucket:
+        bucket_int = int(bucket)
+    else:
+        bucket_int = 0
+
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.get(
+            url=urljoin(url, "/api/people"),
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        json_response = response.json()
+        people = json_response.get("people", [])
+        filtered_people = people[bucket_int : bucket_int + MAX_GALLERY_PER_PAGE]
+
+        previous_bucket = bucket_int - MAX_GALLERY_PER_PAGE
+        if previous_bucket < 0:
+            previous_bucket = ""
+
+        next_bucket = bucket_int + MAX_GALLERY_PER_PAGE
+        if next_bucket >= len(people):
+            next_bucket = ""
+
+        with ThreadPoolExecutor() as pool:
+            futures = []
+            final_response = []
+            for person in filtered_people:
+                id_ = person.get("id")
+                name = person.get("name", "")
+
+                if not id_:
+                    continue
+
+                futures.append((id_, name, pool.submit(download_people_thumbnail, url, token, id_)))
+
+            for id_, name, future in futures:
+                file_path = future.result()
+                final_response.append(People(id=id_, name=name, face_path=file_path))
+    return PeopleResponse(people=final_response, next=str(next_bucket), previous=str(previous_bucket))
+
+
+@memoize(300)
+@crash_reporter
+@dataclass_to_dict
+def person_timeline(person_id: str, bucket: Optional[str] = None) -> TimelineResponse:
+    if bucket:
+        bucket_date, offset_str = bucket.split(",")
+        offset = int(offset_str)
+        current = datetime.fromisoformat(bucket_date)
+    else:
+        current = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        offset = 0
+        bucket_date = current.isoformat()
+
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.get(
+            url=urljoin(url, "/api/timeline/bucket"),
+            headers={"Authorization": f"Bearer {token}"},
+            params={"timeBucket": bucket_date, "visibility": "timeline", "personId": person_id},
+        )
+        response.raise_for_status()
+        json_response = response.json()
+
+        ids = json_response.get("id", [])[offset : offset + MAX_GALLERY_PER_PAGE]
+        days = [x[8:10] for x in json_response.get("fileCreatedAt", [])[offset : offset + MAX_GALLERY_PER_PAGE]]
+        durations = json_response.get("duration", [])[offset : offset + MAX_GALLERY_PER_PAGE]
+
+        if len(ids) < MAX_GALLERY_PER_PAGE:
+            previous_offset = 0
+            previous_date = add_month(current, -1)
+        else:
+            previous_offset = offset + MAX_GALLERY_PER_PAGE
+            previous_date = bucket_date
+
+        if offset == 0:
+            next_offset = 0
+            next_date = add_month(current, 1)
+            if next_date > datetime.now():
+                next_date = None
+        else:
+            next_offset = offset - MAX_GALLERY_PER_PAGE
+            next_date = bucket_date
+
+        with ThreadPoolExecutor() as pool:
+            futures = {}
+            for i, id_ in enumerate(ids):
+                duration = durations[i][3:8] if durations[i] else None
+                futures[id_] = pool.submit(thumbnail, url, token, id_, duration)
+                if i - 1 >= 0:
+                    kv.put_cached(f"person.{person_id}.photo.{id_}.previous", ids[i - 1])
+                if i + 1 < len(ids):
+                    kv.put_cached(f"person.{person_id}.photo.{id_}.next", ids[i + 1])
+            kv.commit_cached()
+
+        data_structure = {}
+        for id_, day in zip(ids, days):
+            future = futures.get(id_)
+            if future:
+                result = future.result()
+                if result:
+                    if day not in data_structure:
+                        data_structure[day] = []
+                    data_structure[day].append(result)
+
+        days = []
+        month = current.strftime("%B")
+        for k, v in data_structure.items():
+            days.append(Day(date=f"{month} {k}", images=v))
+
+        return TimelineResponse(
+            month=month,
+            days=days,
+            previous=f"{previous_date},{str(previous_offset)}",
+            next=f"{next_date},{str(next_offset)}" if next_date else None,
+        )
+
+
+@crash_reporter
+def person_preview_video(
+    url: str,
+    token: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+    person_id: str,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"person.{person_id}.photo.{image_id}.previous")
+        next_ = kv.get(f"person.{person_id}.photo.{image_id}.next")
+
+    file_path = download_video_preview(url, token, image_id)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.VIDEO,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@crash_reporter
+def person_preview_image(
+    url: str,
+    token: str,
+    image_id: str,
+    file_name: str,
+    favorite: bool,
+    person_id: str,
+) -> Preview:
+    with KV() as kv:
+        previous = kv.get(f"person.{person_id}.photo.{image_id}.previous")
+        next_ = kv.get(f"person.{person_id}.photo.{image_id}.next")
+
+    file_path = download_photo_preview(url, token, image_id)
+
+    return Preview(
+        filePath=file_path,
+        id=image_id,
+        name=file_name,
+        file_type=FileType.IMAGE,
+        previous=previous,
+        next=next_,
+        favorite=favorite,
+    )
+
+
+@crash_reporter
+@dataclass_to_dict
+def person_preview(image_id: str, person_id: str) -> Preview:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        file_name = kv.get(f"person.{person_id}.photo.{image_id}.name")
+        file_type = kv.get(f"person.{person_id}.photo.{image_id}.type")
+        favorite = kv.get(f"person.{person_id}.photo.{image_id}.favorite")
+
+        if not file_name or not file_type or favorite is None:
+            metadata_response = http.get(
+                urljoin(url, f"/api/assets/{image_id}"),
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
+            file_type = json_response.get("type", "IMAGE")
+            favorite = json_response.get("isFavorite", False)
+
+            kv.put(f"person.{person_id}.photo.{image_id}.name", file_name, ttl_seconds=300)
+            kv.put(f"person.{person_id}.photo.{image_id}.type", file_type, ttl_seconds=300)
+            kv.put(f"person.{person_id}.photo.{image_id}.favorite", favorite, ttl_seconds=300)
+
+    if file_type == "VIDEO":
+        return person_preview_video(url, token, image_id, file_name, favorite, person_id)
+
+    return person_preview_image(url, token, image_id, file_name, favorite, person_id)

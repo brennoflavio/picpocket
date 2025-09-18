@@ -18,7 +18,7 @@ from src.constants import (
     APP_NAME,
     CRASH_REPORT_URL,
 )
-from src.lib import setup
+from src.ut_components import setup
 
 setup(APP_NAME, CRASH_REPORT_URL)
 
@@ -27,9 +27,9 @@ import time
 from datetime import datetime
 from urllib.parse import urljoin
 
-import src.lib.http as http
-from src.lib.config import get_cache_path
-from src.lib.kv import KV
+import src.ut_components.http as http
+from src.ut_components.config import get_cache_path
+from src.ut_components.kv import KV
 from src.utils import is_webp
 
 
@@ -155,5 +155,24 @@ def upload_photo(url: str, token: str, file_path: str, wait: bool = False) -> bo
         )
         response.raise_for_status()
         if wait:
-            time.sleep(0.5)
+            time.sleep(1)
         return response.success
+
+
+def download_people_thumbnail(url: str, token: str, person_id: str) -> str:
+    base_folder = os.path.join(get_cache_path(), "picpocket/person-thumbnail")
+    os.makedirs(base_folder, exist_ok=True)
+    file_path = os.path.join(base_folder, f"{person_id}.jpeg")
+
+    if os.path.isfile(file_path):
+        return file_path
+
+    response = http.get(
+        url=urljoin(url, f"/api/people/{person_id}/thumbnail"),
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    response.raise_for_status()
+    data = response.data
+    with open(file_path, "wb+") as f:
+        f.write(data)
+    return file_path

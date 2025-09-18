@@ -19,7 +19,7 @@ from src.constants import (
     CRASH_REPORT_URL,
     DEFAULT_CACHE_DAYS,
 )
-from src.lib import setup
+from src.ut_components import setup
 
 setup(APP_NAME, CRASH_REPORT_URL)
 
@@ -32,10 +32,10 @@ from typing import List
 from src.immich_utils import (
     upload_photo,
 )
-from src.lib.config import get_cache_path
-from src.lib.crash import crash_reporter
-from src.lib.kv import KV
-from src.lib.notification import Notification, parse_notification
+from src.ut_components.config import get_cache_path
+from src.ut_components.crash import crash_reporter
+from src.ut_components.kv import KV
+from src.ut_components.notification import Notification, parse_notification
 
 
 @crash_reporter

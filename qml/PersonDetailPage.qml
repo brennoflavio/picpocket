@@ -1,18 +1,3 @@
-/*
- * Copyright (C) 2025  Brenno Flávio de Almeida
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 3.
- *
- * picpocket is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
@@ -21,14 +6,14 @@ import "lib"
 import "ut_components"
 
 Page {
-    id: albumDetailPage
+    id: personDetailPage
 
-    property string albumId: ""
-    property string albumName: ""
+    property string personId: ""
+    property string personName: ""
 
     header: AppHeader {
         id: header
-        pageTitle: albumName || i18n.tr("Album")
+        pageTitle: personName || i18n.tr("Person")
         isRootPage: false
         showSettingsButton: true
         onSettingsClicked: {
@@ -36,27 +21,27 @@ Page {
         }
     }
 
-    property var albumData: ({
+    property var personPhotosData: ({
             "month": "",
             "days": [],
             "previous": "",
             "next": ""
         })
 
-    function loadAlbumTimeline(hint) {
+    function loadPersonTimeline(hint) {
         loadingToast.showing = true;
-        loadingToast.message = i18n.tr("Loading album photos...");
+        loadingToast.message = i18n.tr("Loading person photos...");
         var args = [];
         if (hint && hint !== "") {
-            args = [albumId, hint];
+            args = [personId, hint];
         } else {
-            args = [albumId];
+            args = [personId];
         }
-        python.call('immich_client.album_detail', args, function (result) {
+        python.call('immich_client.person_timeline', args, function (result) {
                 if (result) {
-                    albumDetailPage.albumData = result;
+                    personDetailPage.personPhotosData = result;
                 } else {
-                    albumDetailPage.albumData = {
+                    personDetailPage.personPhotosData = {
                         "month": "",
                         "days": [],
                         "previous": "",
@@ -73,13 +58,13 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('immich_client', function () {
-                    loadAlbumTimeline("");
+                    loadPersonTimeline("");
                 });
         }
 
         onError: {
             loadingToast.showing = false;
-            loadingToast.message = i18n.tr("Error loading album");
+            loadingToast.message = i18n.tr("Error loading person photos");
         }
     }
 
@@ -101,7 +86,7 @@ Page {
             refreshing: loadingToast.showing
             onRefresh: {
                 python.call('immich_client.clear_cache', [], function () {
-                        loadAlbumTimeline("");
+                        loadPersonTimeline("");
                     });
             }
         }
@@ -109,13 +94,13 @@ Page {
         Gallery {
             id: gallery
             width: parent.width
-            month: albumDetailPage.albumData.month
-            days: albumDetailPage.albumData.days
+            month: personDetailPage.personPhotosData.month
+            days: personDetailPage.personPhotosData.days
 
             onItemClicked: {
                 pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                        "previewType": "album",
-                        "albumId": albumDetailPage.albumId,
+                        "previewType": "person",
+                        "personId": personDetailPage.personId,
                         "filePath": imageData.filePath,
                         "photoId": imageData.id || ""
                     });
@@ -133,12 +118,12 @@ Page {
 
         leftButton: IconButton {
             iconName: "go-previous"
-            visible: albumDetailPage.albumData.previous !== undefined && albumDetailPage.albumData.previous !== ""
-            enabled: albumDetailPage.albumData.previous !== "" && !loadingToast.showing
+            visible: personDetailPage.personPhotosData.previous !== undefined && personDetailPage.personPhotosData.previous !== ""
+            enabled: personDetailPage.personPhotosData.previous !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
-                if (albumDetailPage.albumData.previous) {
-                    loadAlbumTimeline(albumDetailPage.albumData.previous);
+                if (personDetailPage.personPhotosData.previous) {
+                    loadPersonTimeline(personDetailPage.personPhotosData.previous);
                     flickable.contentY = 0;
                 }
             }
@@ -146,12 +131,12 @@ Page {
 
         rightButton: IconButton {
             iconName: "go-next"
-            visible: albumDetailPage.albumData.next !== undefined && albumDetailPage.albumData.next !== ""
-            enabled: albumDetailPage.albumData.next !== "" && !loadingToast.showing
+            visible: personDetailPage.personPhotosData.next !== undefined && personDetailPage.personPhotosData.next !== ""
+            enabled: personDetailPage.personPhotosData.next !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
-                if (albumDetailPage.albumData.next) {
-                    loadAlbumTimeline(albumDetailPage.albumData.next);
+                if (personDetailPage.personPhotosData.next) {
+                    loadPersonTimeline(personDetailPage.personPhotosData.next);
                     flickable.contentY = 0;
                 }
             }

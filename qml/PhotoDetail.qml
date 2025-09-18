@@ -20,6 +20,7 @@ import QtQuick.Layouts 1.12
 import Lomiri.Content 1.3
 import QtMultimedia 5.12
 import io.thp.pyotherside 1.4
+import "ut_components"
 
 Page {
     id: photoDetailPage
@@ -34,16 +35,13 @@ Page {
     property bool isFavorite: false
     property string previewType: "timeline"
     property string albumId: ""
+    property string personId: ""
 
-    header: PageHeader {
+    header: AppHeader {
         id: pageHeader
-        title: photoDetailPage.photoName
-        leadingActionBar.actions: [
-            Action {
-                iconName: "back"
-                onTriggered: pageStack.pop()
-            }
-        ]
+        pageTitle: photoDetailPage.photoName
+        isRootPage: false
+        showSettingsButton: false
     }
 
     Python {
@@ -65,7 +63,7 @@ Page {
 
     function loadPhotoDetails() {
         photoDetailPage.isLoading = true;
-        python.call('immich_client.preview', [photoId, previewType, albumId], function (result) {
+        python.call('immich_client.preview', [photoId, previewType, albumId, personId], function (result) {
                 if (result) {
                     if (result.filePath) {
                         photoDetailPage.filePath = result.filePath;
@@ -103,7 +101,7 @@ Page {
             top: pageHeader.bottom
             left: parent.left
             right: parent.right
-            bottom: actionBar.top
+            bottom: bottomBar.top
         }
 
         Loader {
@@ -352,172 +350,62 @@ Page {
         }
     }
 
-    Rectangle {
-        id: actionBar
+    BottomBar {
+        id: bottomBar
         anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
         }
-        height: units.gu(8)
-        color: theme.palette.normal.background
 
-        Rectangle {
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
+        IconButton {
+            id: shareButton
+            iconName: "share"
+            text: i18n.tr("Share")
+            onClicked: {
+                if (photoDetailPage.photoId && photoDetailPage.photoId !== "") {
+                    shareButton.enabled = false;
+                    python.call('immich_client.original', [photoDetailPage.photoId], function (result) {
+                            shareButton.enabled = true;
+                            if (result && result !== "") {
+                                pageStack.push(sharePage, {
+                                        "imageUrl": "file://" + result
+                                    });
+                            }
+                        });
+                }
             }
-            height: units.dp(1)
-            color: theme.palette.normal.base
         }
 
-        RowLayout {
-            anchors {
-                fill: parent
-                margins: units.gu(1)
+        IconButton {
+            iconName: photoDetailPage.isFavorite ? "starred" : "non-starred"
+            text: i18n.tr("Favorite")
+            onClicked: {
+                var newFavoriteState = !photoDetailPage.isFavorite;
+                photoDetailPage.isFavorite = newFavoriteState;
+                python.call('immich_client.favorite', [photoDetailPage.photoId, newFavoriteState], function (result) {});
             }
-            spacing: 0
+        }
 
-            Item {
-                Layout.fillWidth: true
-
-                AbstractButton {
-                    id: shareButtonItem
-                    anchors.fill: parent
-                    onClicked: {
-                        if (photoDetailPage.photoId && photoDetailPage.photoId !== "") {
-                            shareButton.enabled = false;
-                            python.call('immich_client.original', [photoDetailPage.photoId], function (result) {
-                                    shareButton.enabled = true;
-                                    if (result && result !== "") {
-                                        pageStack.push(sharePage, {
-                                                "imageUrl": "file://" + result
-                                            });
-                                    }
-                                });
-                        }
-                    }
-
-                    property alias shareButton: shareButtonItem
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            color: theme.palette.normal.foregroundText
-                            name: "share"
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Share")
-                        }
-                    }
-                }
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            onClicked: {
+                python.call('immich_client.archive', [photoDetailPage.photoId], function (result) {
+                        pageStack.clear();
+                        pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                    });
             }
+        }
 
-            Item {
-                Layout.fillWidth: true
-
-                AbstractButton {
-                    anchors.fill: parent
-                    onClicked: {
-                        var newFavoriteState = !photoDetailPage.isFavorite;
-                        photoDetailPage.isFavorite = newFavoriteState;
-                        python.call('immich_client.favorite', [photoDetailPage.photoId, newFavoriteState], function (result) {});
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            color: theme.palette.normal.foregroundText
-                            name: photoDetailPage.isFavorite ? "starred" : "non-starred"
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Favorite")
-                        }
-                    }
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-
-                AbstractButton {
-                    anchors.fill: parent
-                    onClicked: {
-                        python.call('immich_client.archive', [photoDetailPage.photoId], function (result) {
-                                pageStack.clear();
-                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
-                            });
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            color: theme.palette.normal.foregroundText
-                            name: "save"
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Archive")
-                        }
-                    }
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-
-                AbstractButton {
-                    anchors.fill: parent
-                    onClicked: {
-                        python.call('immich_client.delete', [photoDetailPage.photoId], function (result) {
-                                pageStack.clear();
-                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
-                            });
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            color: theme.palette.normal.foregroundText
-                            name: "delete"
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Delete")
-                        }
-                    }
-                }
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Delete")
+            onClicked: {
+                python.call('immich_client.delete', [photoDetailPage.photoId], function (result) {
+                        pageStack.clear();
+                        pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                    });
             }
         }
     }

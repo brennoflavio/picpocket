@@ -21,6 +21,7 @@ import Qt.labs.settings 1.0
 import io.thp.pyotherside 1.4
 import "lib"
 import Lomiri.PushNotifications 0.1
+import "ut_components"
 
 MainView {
     id: root
@@ -68,7 +69,9 @@ MainView {
             header: AppHeader {
                 id: header
                 pageTitle: i18n.tr('PicPocket')
-                iconName: "stock_image"
+                isRootPage: true
+                appIconName: "stock_image"
+                showSettingsButton: false
             }
 
             Flickable {
@@ -90,11 +93,10 @@ MainView {
                     }
                     height: childrenRect.height
 
-                    ColumnLayout {
+                    Column {
                         anchors {
                             left: parent.left
                             right: parent.right
-                            margins: units.gu(2)
                         }
                         spacing: units.gu(2)
 
@@ -102,65 +104,53 @@ MainView {
                             text: i18n.tr("Sign in to Immich")
                             fontSize: "x-large"
                             font.weight: Font.Medium
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.bottomMargin: units.gu(2)
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottomMargin: units.gu(2)
                         }
 
-                        InputField {
-                            id: serverUrlField
-                            title: i18n.tr("Server URL")
-                            placeholder: i18n.tr("https://your-server.com")
-                            validationRegex: "^https?://[^\\s]+$"
-                            errorMessage: i18n.tr("Please enter a valid URL")
-                            Layout.fillWidth: true
-                        }
+                        Form {
+                            id: loginForm
+                            width: parent.width
+                            buttonText: i18n.tr("Sign In")
+                            buttonIconName: "go-next"
 
-                        InputField {
-                            id: emailField
-                            title: i18n.tr("Email")
-                            placeholder: i18n.tr("user@example.com")
-                            inputMethodHints: Qt.ImhEmailCharactersOnly
-                            validationRegex: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
-                            errorMessage: i18n.tr("Please enter a valid email")
-                            Layout.fillWidth: true
-                        }
+                            InputField {
+                                id: serverUrlField
+                                title: i18n.tr("Server URL")
+                                placeholder: i18n.tr("https://your-server.com")
+                                required: true
+                                validationRegex: "^https?://[^\\s]+$"
+                                errorMessage: i18n.tr("Please enter a valid URL")
+                            }
 
-                        InputField {
-                            id: passwordField
-                            title: i18n.tr("Password")
-                            placeholder: i18n.tr("Enter your password")
-                            echoMode: TextInput.Password
-                            Layout.fillWidth: true
-                        }
+                            InputField {
+                                id: emailField
+                                title: i18n.tr("Email")
+                                placeholder: i18n.tr("user@example.com")
+                                required: true
+                                validationRegex: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                                errorMessage: i18n.tr("Please enter a valid email")
+                            }
 
-                        ActionButton {
-                            id: loginButton
-                            text: i18n.tr("Sign In")
-                            iconName: "go-next"
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: units.gu(2)
-                            Layout.preferredWidth: units.gu(30)
-                            Layout.preferredHeight: units.gu(6)
+                            InputField {
+                                id: passwordField
+                                title: i18n.tr("Password")
+                                placeholder: i18n.tr("Enter your password")
+                                echoMode: TextInput.Password
+                                required: true
+                            }
 
-                            onClicked: {
-                                if (serverUrlField.validate() && emailField.validate() && passwordField.text.length > 0) {
-                                    errorLabel.visible = false;
-                                    python.call('immich_client.login', [serverUrlField.text, emailField.text, passwordField.text], function (result) {
-                                            if (result.success) {
-                                                pageStack.clear();
-                                                pageStack.push(galleryPage);
-                                            } else {
-                                                errorLabel.text = result.message;
-                                                errorLabel.visible = true;
-                                            }
-                                        });
-                                } else {
-                                    serverUrlField.validate();
-                                    emailField.validate();
-                                    if (passwordField.text.length === 0) {
-                                        passwordField.showError = true;
-                                    }
-                                }
+                            onSubmitted: {
+                                errorLabel.visible = false;
+                                python.call('immich_client.login', [serverUrlField.text, emailField.text, passwordField.text], function (result) {
+                                        if (result.success) {
+                                            pageStack.clear();
+                                            pageStack.push(galleryPage);
+                                        } else {
+                                            errorLabel.text = result.message;
+                                            errorLabel.visible = true;
+                                        }
+                                    });
                             }
                         }
 
@@ -168,8 +158,8 @@ MainView {
                             id: errorLabel
                             visible: false
                             color: theme.palette.normal.negative
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.fillWidth: true
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: parent.width - units.gu(4)
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
                         }

@@ -19,6 +19,7 @@ import QtQuick.Layouts 1.3
 import Lomiri.Content 1.3
 import io.thp.pyotherside 1.4
 import "lib"
+import "ut_components"
 
 Page {
     id: galleryPage
@@ -26,12 +27,9 @@ Page {
     header: AppHeader {
         id: header
         pageTitle: i18n.tr('PicPocket')
-        iconName: picturePicker.visible ? "" : "stock_image"
-        showBackButton: picturePicker.visible
-        showSettingsButton: !picturePicker.visible
-        onBackClicked: {
-            picturePicker.visible = false;
-        }
+        isRootPage: true
+        appIconName: "stock_image"
+        showSettingsButton: true
         onSettingsClicked: {
             pageStack.push(Qt.resolvedUrl("ConfigurationPage.qml"));
         }
@@ -93,7 +91,7 @@ Page {
             top: header.bottom
             left: parent.left
             right: parent.right
-            bottom: actionBar.top
+            bottom: bottomBar.top
         }
         contentHeight: memoriesColumn.height
         clip: true
@@ -117,7 +115,6 @@ Page {
             Memories {
                 id: memories
                 width: parent.width
-                visible: !picturePicker.visible
                 memoriesData: galleryPage.memoriesData
 
                 onMemoryClicked: {
@@ -146,149 +143,67 @@ Page {
         }
     }
 
-    Rectangle {
-        id: actionBar
+    BottomBar {
+        id: bottomBar
         anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
         }
-        height: units.gu(8)
-        color: theme.palette.normal.background
 
-        Rectangle {
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
+        leftButton: IconButton {
+            iconName: "go-previous"
+            visible: galleryPage.galleryData.previous !== undefined && galleryPage.galleryData.previous !== ""
+            enabled: galleryPage.galleryData.previous !== "" && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                if (galleryPage.galleryData.previous) {
+                    loadTimeline(galleryPage.galleryData.previous);
+                    flickable.contentY = 0;
+                }
             }
-            height: units.dp(1)
-            color: theme.palette.normal.base
         }
 
-        Item {
-            anchors.fill: parent
-
-            AbstractButton {
-                id: previousButton
-                anchors {
-                    left: parent.left
-                    leftMargin: units.gu(1)
-                    top: parent.top
-                    bottom: parent.bottom
-                }
-                width: units.gu(6)
-                visible: galleryPage.galleryData.previous !== undefined && galleryPage.galleryData.previous !== ""
-                enabled: galleryPage.galleryData.previous !== "" && !loadingToast.showing
-
-                Icon {
-                    anchors.centerIn: parent
-                    width: units.gu(3)
-                    height: width
-                    name: "go-previous"
-                    color: previousButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
-                }
-
-                onClicked: {
-                    if (galleryPage.galleryData.previous) {
-                        loadTimeline(galleryPage.galleryData.previous);
-                        flickable.contentY = 0;
-                    }
+        rightButton: IconButton {
+            iconName: "go-next"
+            visible: galleryPage.galleryData.next !== undefined && galleryPage.galleryData.next !== ""
+            enabled: galleryPage.galleryData.next !== "" && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                if (galleryPage.galleryData.next) {
+                    loadTimeline(galleryPage.galleryData.next);
+                    flickable.contentY = 0;
                 }
             }
+        }
 
-            Row {
-                anchors.centerIn: parent
-                spacing: units.gu(4)
-                height: parent.height
-
-                AbstractButton {
-                    id: albumsButton
-                    width: units.gu(6)
-                    height: parent.height
-                    enabled: !loadingToast.showing
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            name: "view-grid-symbolic"
-                            color: albumsButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Albums")
-                        }
-                    }
-
-                    onClicked: {
-                        pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"));
-                    }
-                }
-
-                AbstractButton {
-                    id: uploadButton
-                    width: units.gu(6)
-                    height: parent.height
-                    enabled: !loadingToast.showing
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: units.gu(0.5)
-
-                        Icon {
-                            width: units.gu(3)
-                            height: width
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            name: "keyboard-caps-disabled"
-                            color: uploadButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
-                        }
-
-                        Label {
-                            fontSize: "small"
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: i18n.tr("Upload")
-                        }
-                    }
-
-                    onClicked: {
-                        picturePicker.visible = true;
-                    }
-                }
+        IconButton {
+            iconName: "view-grid-symbolic"
+            text: i18n.tr("Albums")
+            enabled: !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"));
             }
+        }
 
-            AbstractButton {
-                id: nextButton
-                anchors {
-                    right: parent.right
-                    rightMargin: units.gu(1)
-                    top: parent.top
-                    bottom: parent.bottom
-                }
-                width: units.gu(6)
-                visible: galleryPage.galleryData.next !== undefined && galleryPage.galleryData.next !== ""
-                enabled: galleryPage.galleryData.next !== "" && !loadingToast.showing
+        IconButton {
+            iconName: "view-list-symbolic"
+            text: i18n.tr("Library")
+            enabled: !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                pageStack.push(Qt.resolvedUrl("LibraryPage.qml"));
+            }
+        }
 
-                Icon {
-                    anchors.centerIn: parent
-                    width: units.gu(3)
-                    height: width
-                    name: "go-next"
-                    color: nextButton.enabled ? theme.palette.normal.foregroundText : theme.palette.disabled.foregroundText
-                }
-
-                onClicked: {
-                    if (galleryPage.galleryData.next) {
-                        loadTimeline(galleryPage.galleryData.next);
-                        flickable.contentY = 0;
-                    }
-                }
+        IconButton {
+            iconName: "keyboard-caps-disabled"
+            text: i18n.tr("Upload")
+            enabled: !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                pageStack.push(uploadPickerPage);
             }
         }
     }
@@ -298,7 +213,7 @@ Page {
         anchors {
             right: parent.right
             rightMargin: units.gu(2)
-            bottom: actionBar.top
+            bottom: bottomBar.top
             bottomMargin: units.gu(2)
         }
         width: units.gu(6)
@@ -334,7 +249,8 @@ Page {
 
     LoadToast {
         id: loadingToast
-        showSpinner: true
+        showing: false
+        message: ""
     }
 
     ContentStore {
@@ -342,64 +258,99 @@ Page {
         scope: ContentScope.App
     }
 
-    ContentPeerPicker {
-        id: picturePicker
-        visible: false
-        contentType: ContentType.Pictures
-        handler: ContentHandler.Source
+    Component {
+        id: uploadPickerPage
 
-        property int uploadIndex: 0
-        property int totalFiles: 0
-        property var filesToUpload: []
+        Page {
+            id: uploadPageInstance
+            property var activeTransfer
 
-        function uploadNextFile() {
-            if (uploadIndex < filesToUpload.length) {
-                var filePath = filesToUpload[uploadIndex];
-                loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(uploadIndex + 1).arg(totalFiles);
-                python.call('immich_client.upload_immich_photo', [filePath], function (result) {
-                        uploadIndex++;
-                        if (uploadIndex < filesToUpload.length) {
-                            uploadNextFile();
-                        } else {
-                            loadingToast.showing = false;
-                            loadTimeline("");
-                            uploadIndex = 0;
-                            totalFiles = 0;
-                            filesToUpload = [];
-                        }
-                    });
-            }
-        }
-
-        onPeerSelected: {
-            var transfer = peer.request(contentStore);
-            transfer.selectionType = ContentTransfer.Multiple;
-            transfer.stateChanged.connect(function () {
-                    if (transfer.state === ContentTransfer.Charged) {
-                        if (transfer.items.length > 0) {
-                            filesToUpload = [];
-                            for (var i = 0; i < transfer.items.length; i++) {
-                                var fileUrl = transfer.items[i].url.toString();
-                                var filePath = fileUrl.replace("file://", "");
-                                filesToUpload.push(filePath);
+            header: PageHeader {
+                id: uploadHeader
+                title: i18n.tr("Select Photos to Upload")
+                leadingActionBar.actions: [
+                    Action {
+                        iconName: "back"
+                        onTriggered: {
+                            if (uploadPageInstance.activeTransfer) {
+                                uploadPageInstance.activeTransfer.state = ContentTransfer.Aborted;
                             }
-                            totalFiles = filesToUpload.length;
-                            uploadIndex = 0;
-                            if (totalFiles === 1) {
-                                loadingToast.message = i18n.tr("Uploading photo...");
-                            } else {
-                                loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(1).arg(totalFiles);
-                            }
-                            loadingToast.showing = true;
-                            uploadNextFile();
+                            pageStack.pop();
                         }
-                        picturePicker.visible = false;
                     }
-                });
-        }
+                ]
+            }
 
-        onCancelPressed: {
-            picturePicker.visible = false;
+            property int uploadIndex: 0
+            property int totalFiles: 0
+            property var filesToUpload: []
+
+            function uploadNextFile() {
+                if (uploadIndex < filesToUpload.length) {
+                    var filePath = filesToUpload[uploadIndex];
+                    loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(uploadIndex + 1).arg(totalFiles);
+                    python.call('immich_client.upload_immich_photo', [filePath], function (result) {
+                            uploadIndex++;
+                            if (uploadIndex < filesToUpload.length) {
+                                uploadNextFile();
+                            } else {
+                                loadingToast.showing = false;
+                                python.call('immich_client.clear_cache', [], function () {
+                                        loadTimeline("");
+                                    });
+                                uploadIndex = 0;
+                                totalFiles = 0;
+                                filesToUpload = [];
+                            }
+                        });
+                }
+            }
+
+            ContentPeerPicker {
+                id: picturePicker
+                anchors {
+                    top: uploadHeader.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                contentType: ContentType.Pictures
+                handler: ContentHandler.Source
+
+                onPeerSelected: {
+                    uploadPageInstance.activeTransfer = peer.request(contentStore);
+                    uploadPageInstance.activeTransfer.selectionType = ContentTransfer.Multiple;
+                    uploadPageInstance.activeTransfer.stateChanged.connect(function () {
+                            if (uploadPageInstance.activeTransfer.state === ContentTransfer.Charged) {
+                                if (uploadPageInstance.activeTransfer.items.length > 0) {
+                                    uploadPageInstance.filesToUpload = [];
+                                    for (var i = 0; i < uploadPageInstance.activeTransfer.items.length; i++) {
+                                        var fileUrl = uploadPageInstance.activeTransfer.items[i].url.toString();
+                                        var filePath = fileUrl.replace("file://", "");
+                                        uploadPageInstance.filesToUpload.push(filePath);
+                                    }
+                                    uploadPageInstance.totalFiles = uploadPageInstance.filesToUpload.length;
+                                    uploadPageInstance.uploadIndex = 0;
+                                    if (uploadPageInstance.totalFiles === 1) {
+                                        loadingToast.message = i18n.tr("Uploading photo...");
+                                    } else {
+                                        loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(1).arg(uploadPageInstance.totalFiles);
+                                    }
+                                    loadingToast.showing = true;
+                                    uploadPageInstance.uploadNextFile();
+                                }
+                                pageStack.pop();
+                            }
+                        });
+                }
+
+                onCancelPressed: {
+                    if (uploadPageInstance.activeTransfer) {
+                        uploadPageInstance.activeTransfer.state = ContentTransfer.Aborted;
+                    }
+                    pageStack.pop();
+                }
+            }
         }
     }
 }

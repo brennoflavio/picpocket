@@ -17,6 +17,7 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import io.thp.pyotherside 1.4
 import "lib"
+import "ut_components"
 
 Page {
     id: configurationPage
@@ -27,10 +28,8 @@ Page {
 
     header: AppHeader {
         pageTitle: i18n.tr("Configuration")
-        showBackButton: true
+        isRootPage: false
         showSettingsButton: false
-
-        onBackClicked: pageStack.pop()
     }
 
     Component.onCompleted: {
@@ -144,19 +143,6 @@ Page {
                 }
             }
 
-            // ConfigurationGroup {
-            //     title: i18n.tr("Sync")
-
-            //     ToggleOption {
-            //         title: i18n.tr("Auto upload")
-            //         subtitle: i18n.tr("Automatically upload photos and videos to Immich")
-            //         checked: configurationPage.autoSyncEnabled
-            //         onToggled: function(checked) {
-            //             configurationPage.autoSyncEnabled = checked;
-            //             configurationPage.setAutoSync(checked);
-            //         }
-            //     }
-            // }
             ConfigurationGroup {
                 title: i18n.tr("Misc")
 
@@ -175,7 +161,8 @@ Page {
 
     LoadToast {
         id: loadingToast
-        showSpinner: true
+        showing: false
+        message: ""
     }
 
     Python {
