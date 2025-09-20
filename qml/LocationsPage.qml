@@ -17,9 +17,6 @@ Page {
     }
 
     property var locationsData: []
-    property string previousPageHint: ""
-    property string nextPageHint: ""
-    property string currentPageHint: ""
 
     Python {
         id: python
@@ -36,11 +33,10 @@ Page {
         }
     }
 
-    function loadLocations(pageHint) {
+    function loadLocations() {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading locations...");
-        var args = pageHint ? [pageHint] : [];
-        python.call('immich_client.locations', args, function (result) {
+        python.call('immich_client.locations', [], function (result) {
                 if (result) {
                     locationsData = result.locations.map(function (location) {
                             return {
@@ -50,9 +46,6 @@ Page {
                                 "thumbnailSource": location.thumbnail_path
                             };
                         });
-                    previousPageHint = result.previous || "";
-                    nextPageHint = result.next || "";
-                    currentPageHint = pageHint || "";
                 }
                 loadingToast.showing = false;
             });
@@ -71,19 +64,11 @@ Page {
         items: locationsData
         emptyMessage: i18n.tr("No locations found")
         showSearchBar: locationsData.length > 5
-        enablePullToRefresh: true
-        refreshing: loadingToast.showing
 
         onItemClicked: {
             pageStack.push(Qt.resolvedUrl("LocationDetailPage.qml"), {
                     "locationId": item.id,
                     "locationName": item.title
-                });
-        }
-
-        onRefreshRequested: {
-            python.call('immich_client.clear_cache', [], function () {
-                    loadLocations(currentPageHint);
                 });
         }
     }
@@ -96,21 +81,14 @@ Page {
             bottom: parent.bottom
         }
 
-        leftButton: IconButton {
-            iconName: "go-previous"
-            visible: previousPageHint !== ""
-            enabled: previousPageHint !== "" && !loadingToast.showing
+        IconButton {
+            iconName: "view-refresh"
+            text: i18n.tr("Refresh")
+            enabled: !loadingToast.showing
             onClicked: {
-                loadLocations(previousPageHint);
-            }
-        }
-
-        rightButton: IconButton {
-            iconName: "go-next"
-            visible: nextPageHint !== ""
-            enabled: nextPageHint !== "" && !loadingToast.showing
-            onClicked: {
-                loadLocations(nextPageHint);
+                python.call('immich_client.clear_cache', [], function () {
+                        loadLocations();
+                    });
             }
         }
     }

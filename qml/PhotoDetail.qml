@@ -33,10 +33,13 @@ Page {
     property string previousId: ""
     property string nextId: ""
     property bool isFavorite: false
+    property bool isArchived: false
+    property bool isDeleted: false
     property string previewType: "timeline"
     property string albumId: ""
     property string personId: ""
     property string locationId: ""
+    property string searchQuery: ""
 
     header: AppHeader {
         id: pageHeader
@@ -64,7 +67,7 @@ Page {
 
     function loadPhotoDetails() {
         photoDetailPage.isLoading = true;
-        python.call('immich_client.preview', [photoId, previewType, albumId, personId, locationId], function (result) {
+        python.call('immich_client.preview', [photoId, previewType, albumId, personId, locationId, searchQuery], function (result) {
                 if (result) {
                     if (result.filePath) {
                         photoDetailPage.filePath = result.filePath;
@@ -78,6 +81,8 @@ Page {
                     photoDetailPage.previousId = result.previous || "";
                     photoDetailPage.nextId = result.next || "";
                     photoDetailPage.isFavorite = result.favorite || false;
+                    photoDetailPage.isArchived = result.archived || false;
+                    photoDetailPage.isDeleted = result.deleted || false;
                 }
                 photoDetailPage.isLoading = false;
             });
@@ -389,23 +394,57 @@ Page {
         }
 
         IconButton {
-            iconName: "save"
-            text: i18n.tr("Archive")
+            iconName: photoDetailPage.isArchived ? "reset" : "save"
+            text: photoDetailPage.isArchived ? i18n.tr("Unarchive") : i18n.tr("Archive")
             onClicked: {
-                python.call('immich_client.archive', [photoDetailPage.photoId], function (result) {
-                        pageStack.clear();
-                        pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                var methodName = photoDetailPage.isArchived ? 'immich_client.unarchive' : 'immich_client.archive';
+                python.call(methodName, [photoDetailPage.photoId], function (result) {
+                        python.call('immich_client.clear_cache', [], function () {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
                     });
             }
         }
 
         IconButton {
             iconName: "delete"
-            text: i18n.tr("Delete")
+            text: i18n.tr("Trash")
+            visible: !photoDetailPage.isDeleted
             onClicked: {
                 python.call('immich_client.delete', [photoDetailPage.photoId], function (result) {
-                        pageStack.clear();
-                        pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                        python.call('immich_client.clear_cache', [], function () {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "reset"
+            text: i18n.tr("Restore")
+            visible: photoDetailPage.isDeleted
+            onClicked: {
+                python.call('immich_client.undelete', [photoDetailPage.photoId], function (result) {
+                        python.call('immich_client.clear_cache', [], function () {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "toolkit_cross"
+            text: i18n.tr("Delete")
+            visible: photoDetailPage.isDeleted
+            onClicked: {
+                python.call('immich_client.permanently_delete', [photoDetailPage.photoId], function (result) {
+                        python.call('immich_client.clear_cache', [], function () {
+                                pageStack.clear();
+                                pageStack.push(Qt.resolvedUrl("GalleryPage.qml"));
+                            });
                     });
             }
         }

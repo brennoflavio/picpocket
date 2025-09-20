@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from enum import Enum
+
 from src.constants import (
     APP_NAME,
     CRASH_REPORT_URL,
@@ -202,7 +204,7 @@ def get_bucket(url: str, token: str, current: str, query_params: Dict[str, str] 
             response = http.get(
                 url=urljoin(url, "/api/timeline/buckets"),
                 headers={"Authorization": f"Bearer {token}"},
-                params={"visibility": "timeline", **query_params},
+                params=query_params,
             )
             response.raise_for_status()
             json_response = response.json()
@@ -286,3 +288,109 @@ def metadata_search(url: str, token: str, query_params: Dict[str, Any], page: st
             )
         )
     return SearchResponse(assets=assets, next=next_page, previous=previous_page)
+
+
+def smart_search(url: str, token: str, query: str, page: str = "") -> SearchResponse:
+    if not page:
+        final_page = "1"
+    else:
+        final_page = page
+
+    response = http.post(
+        url=urljoin(url, "/api/search/smart"),
+        headers={"Authorization": f"Bearer {token}"},
+        json={"page": final_page, "query": query},
+    )
+    response.raise_for_status()
+    json_response = response.json()
+    previous_page = json_response.get("assets", {}).get("nextPage", "")
+    if int(final_page) - 1 < 1:
+        next_page = ""
+    else:
+        next_page = str(int(final_page) - 1)
+
+    items = json_response.get("assets", {}).get("items", [])
+    assets = []
+    for item in items:
+        assets.append(
+            Asset(
+                id=item.get("id", ""),
+                duration=parse_duration(item.get("duration")),
+                title=item.get("originalFileName", ""),
+                created_at=item.get("fileCreatedAt", ""),
+            )
+        )
+    return SearchResponse(assets=assets, next=next_page, previous=previous_page)
+
+
+class FileType(str, Enum):
+    IMAGE = "IMAGE"
+    VIDEO = "VIDEO"
+
+
+@dataclass
+class AssetInfo:
+    file_path: str
+    id: str
+    name: str
+    file_type: FileType
+    favorite: bool
+    archived: bool
+    deleted: bool
+
+
+def asset_info(image_id: str) -> AssetInfo:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        file_name = kv.get(f"asset_info.{image_id}.name")
+        file_type = kv.get(f"asset_info.{image_id}.type")
+        favorite = kv.get(f"asset_info.{image_id}.favorite")
+        archived = kv.get(f"asset_info.{image_id}.archived")
+        deleted = kv.get(f"asset_info.{image_id}.deleted")
+
+        if not file_name or not file_type or favorite is None or archived is None or deleted is None:
+            metadata_response = http.get(
+                urljoin(url, f"/api/assets/{image_id}"),
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            metadata_response.raise_for_status()
+            json_response = metadata_response.json()
+            file_name = json_response.get("originalFileName", "")
+            file_type = json_response.get("type", "IMAGE")
+            favorite = json_response.get("isFavorite", False)
+            archived = json_response.get("isArchived", False)
+            deleted = json_response.get("isTrashed", False)
+
+            kv.put_cached(f"asset_info.{image_id}.name", file_name, ttl_seconds=300)
+            kv.put_cached(f"asset_info.{image_id}.type", file_type, ttl_seconds=300)
+            kv.put_cached(f"asset_info.{image_id}.favorite", favorite, ttl_seconds=300)
+            kv.put_cached(f"asset_info.{image_id}.archived", archived, ttl_seconds=300)
+            kv.put_cached(f"asset_info.{image_id}.deleted", deleted, ttl_seconds=300)
+            kv.commit_cached()
+
+        if file_type == "VIDEO":
+            file_type_enum = FileType.VIDEO
+            file_path = download_video_preview(url, token, image_id)
+        else:
+            file_type_enum = FileType.IMAGE
+            file_path = download_photo_preview(url, token, image_id)
+
+        return AssetInfo(
+            file_path=file_path,
+            id=image_id,
+            name=file_name,
+            file_type=file_type_enum,
+            favorite=favorite,
+            archived=archived,
+            deleted=deleted,
+        )
+
+
+def delete_asset_info():
+    with KV() as kv:
+        kv.delete_partial("asset_info")

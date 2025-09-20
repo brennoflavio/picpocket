@@ -121,7 +121,7 @@ def sync_library(raw_notification: str) -> str:
 
     uploaded = upload_files()
     if uploaded:
-        # delete_memoized(timeline)
+        # delete_memoized(base_timeline)
         notification = Notification(
             icon="stock_image",
             summary="Sync completed successfully",

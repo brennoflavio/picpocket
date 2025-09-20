@@ -17,9 +17,6 @@ Page {
     }
 
     property var peopleData: []
-    property string previousPageHint: ""
-    property string nextPageHint: ""
-    property string currentPageHint: ""
 
     Python {
         id: python
@@ -36,23 +33,19 @@ Page {
         }
     }
 
-    function loadPeople(pageHint) {
+    function loadPeople() {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading people...");
-        var args = pageHint ? [pageHint] : [];
-        python.call('immich_client.people', args, function (result) {
+        python.call('immich_client.people', [], function (result) {
                 if (result) {
                     peopleData = result.people.map(function (person) {
                             return {
                                 "id": person.id,
-                                "title": person.name,
+                                "title": person.name ? person.name : i18n.tr("No name"),
                                 "subtitle": "",
                                 "thumbnailSource": person.face_path
                             };
                         });
-                    previousPageHint = result.previous || "";
-                    nextPageHint = result.next || "";
-                    currentPageHint = pageHint || "";
                 }
                 loadingToast.showing = false;
             });
@@ -71,19 +64,11 @@ Page {
         items: peopleData
         emptyMessage: i18n.tr("No people found")
         showSearchBar: peopleData.length > 5
-        enablePullToRefresh: true
-        refreshing: loadingToast.showing
 
         onItemClicked: {
             pageStack.push(Qt.resolvedUrl("PersonDetailPage.qml"), {
                     "personId": item.id,
                     "personName": item.title
-                });
-        }
-
-        onRefreshRequested: {
-            python.call('immich_client.clear_cache', [], function () {
-                    loadPeople(currentPageHint);
                 });
         }
     }
@@ -96,21 +81,14 @@ Page {
             bottom: parent.bottom
         }
 
-        leftButton: IconButton {
-            iconName: "go-previous"
-            visible: previousPageHint !== ""
-            enabled: previousPageHint !== "" && !loadingToast.showing
+        IconButton {
+            iconName: "reload"
+            text: i18n.tr("Refresh")
+            enabled: !loadingToast.showing
             onClicked: {
-                loadPeople(previousPageHint);
-            }
-        }
-
-        rightButton: IconButton {
-            iconName: "go-next"
-            visible: nextPageHint !== ""
-            enabled: nextPageHint !== "" && !loadingToast.showing
-            onClicked: {
-                loadPeople(nextPageHint);
+                python.call('immich_client.clear_cache', [], function () {
+                        loadPeople();
+                    });
             }
         }
     }

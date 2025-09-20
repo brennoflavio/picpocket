@@ -58,12 +58,13 @@ Page {
     }
 
     property bool refreshing: false
+    property bool clearingCache: false
     property var albumsData: []
 
     LoadToast {
         id: loadToast
-        message: i18n.tr("Loading albums...")
-        showing: refreshing
+        message: clearingCache ? i18n.tr("Refreshing albums...") : i18n.tr("Loading albums...")
+        showing: refreshing || clearingCache
     }
 
     CardList {
@@ -72,17 +73,16 @@ Page {
             top: header.bottom
             left: parent.left
             right: parent.right
-            bottom: parent.bottom
+            bottom: bottomBar.top
             topMargin: units.gu(2)
             leftMargin: units.gu(2)
             rightMargin: units.gu(2)
+            bottomMargin: units.gu(1)
         }
         items: albumsData
         showSearchBar: true
         searchPlaceholder: i18n.tr("Search albums")
         emptyMessage: i18n.tr("No albums")
-        enablePullToRefresh: true
-        refreshing: albumsPage.refreshing
 
         onItemClicked: {
             pageStack.push(Qt.resolvedUrl("AlbumDetailPage.qml"), {
@@ -90,11 +90,26 @@ Page {
                     "albumName": item.title
                 });
         }
+    }
 
-        onRefreshRequested: {
-            python.call('immich_client.clear_cache', [], function () {
-                    loadAlbums();
-                });
+    BottomBar {
+        id: bottomBar
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+
+        IconButton {
+            iconName: "view-refresh"
+            text: i18n.tr("Refresh")
+            onClicked: {
+                clearingCache = true;
+                python.call('immich_client.clear_cache', [], function () {
+                        clearingCache = false;
+                        loadAlbums();
+                    });
+            }
         }
     }
 }
