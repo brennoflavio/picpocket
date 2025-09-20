@@ -23,13 +23,15 @@ from src.ut_components import setup
 setup(APP_NAME, CRASH_REPORT_URL)
 
 import os
-import time
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 import src.ut_components.http as http
 from src.ut_components.config import get_cache_path
 from src.ut_components.kv import KV
+from src.ut_components.memoize import hash_function_args
 from src.utils import is_webp
 
 
@@ -46,7 +48,9 @@ def download_thumbnail(url: str, token: str, image_id: str) -> str:
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "thumbnail"},
     )
-    response.raise_for_status()
+    if response.status_code >= 300:
+        return ""
+
     data = response.data
     if is_webp(data):
         with open(file_path, "wb+") as f:
@@ -130,7 +134,7 @@ def download_original(image_id: str) -> str:
     return file_path
 
 
-def upload_photo(url: str, token: str, file_path: str, wait: bool = False) -> bool:
+def upload_photo(url: str, token: str, file_path: str) -> http.Response:
     stat_info = os.stat(file_path)
     modified_time = datetime.fromtimestamp(stat_info.st_mtime).isoformat()
     creation_time = datetime.fromtimestamp(stat_info.st_ctime).isoformat()
@@ -153,10 +157,7 @@ def upload_photo(url: str, token: str, file_path: str, wait: bool = False) -> bo
             form_fields=data,
             headers={"Authorization": f"Bearer {token}"},
         )
-        response.raise_for_status()
-        if wait:
-            time.sleep(1)
-        return response.success
+        return response
 
 
 def download_people_thumbnail(url: str, token: str, person_id: str) -> str:
@@ -176,3 +177,112 @@ def download_people_thumbnail(url: str, token: str, person_id: str) -> str:
     with open(file_path, "wb+") as f:
         f.write(data)
     return file_path
+
+
+@dataclass
+class Bucket:
+    current: str
+    next: str
+    previous: str
+
+
+def get_bucket(url: str, token: str, current: str, query_params: Dict[str, str] = {}) -> Bucket:
+    hashed_args = hash_function_args(query_params, {})
+    with KV() as kv:
+        cached = kv.get(f"bucket.{hashed_args}.cached") or False
+        if cached:
+            if not current:
+                final_current = kv.get(f"bucket.{hashed_args}.first") or ""
+            else:
+                final_current = current
+            next_ = kv.get(f"bucket.{hashed_args}.{final_current}.next") or ""
+            previous = kv.get(f"bucket.{hashed_args}.{final_current}.previous") or ""
+            return Bucket(current=final_current, next=next_, previous=previous)
+        else:
+            response = http.get(
+                url=urljoin(url, "/api/timeline/buckets"),
+                headers={"Authorization": f"Bearer {token}"},
+                params={"visibility": "timeline", **query_params},
+            )
+            response.raise_for_status()
+            json_response = response.json()
+            time_buckets = [x.get("timeBucket") for x in json_response]
+
+            for i, bucket in enumerate(time_buckets):
+                if i == 0:
+                    kv.put_cached(f"bucket.{hashed_args}.first", bucket, ttl_seconds=3600)
+                    first = bucket
+                next_ = time_buckets[i - 1] if i - 1 >= 0 else ""
+                previous = time_buckets[i + 1] if i + 1 < len(time_buckets) else ""
+
+                kv.put_cached(f"bucket.{hashed_args}.{bucket}.next", next_, ttl_seconds=3600)
+                kv.put_cached(f"bucket.{hashed_args}.{bucket}.previous", previous, ttl_seconds=3600)
+            kv.put_cached(f"bucket.{hashed_args}.cached", True, ttl_seconds=3600)
+            kv.commit_cached()
+            if not current:
+                final_current = first
+            else:
+                final_current = current
+            return get_bucket(url, token, current=final_current, query_params=query_params)
+
+
+def delete_buckets():
+    with KV() as kv:
+        kv.delete_partial("bucket")
+
+
+def parse_duration(duration: str) -> Optional[str]:
+    if not duration:
+        return None
+    only_zeros = int(duration.replace(".", "").replace(":", "")) == 0
+    if only_zeros:
+        return None
+    return duration[3:8]
+
+
+@dataclass
+class Asset:
+    id: str
+    duration: Optional[str]
+    title: str
+    created_at: str
+
+
+@dataclass
+class SearchResponse:
+    assets: List[Asset]
+    next: str
+    previous: str
+
+
+def metadata_search(url: str, token: str, query_params: Dict[str, Any], page: str = "") -> SearchResponse:
+    if not page:
+        final_page = "1"
+    else:
+        final_page = page
+
+    response = http.post(
+        url=urljoin(url, "/api/search/metadata"),
+        headers={"Authorization": f"Bearer {token}"},
+        json={"page": final_page, **query_params},
+    )
+    response.raise_for_status()
+    json_response = response.json()
+    previous_page = json_response.get("assets", {}).get("nextPage", "")
+    if int(final_page) - 1 < 1:
+        next_page = ""
+    else:
+        next_page = str(int(final_page) - 1)
+
+    items = json_response.get("assets", {}).get("items", [])
+    assets = []
+    for item in items:
+        assets.append(
+            Asset(
+                id=item.get("id", ""),
+                duration=parse_duration(item.get("duration")),
+                title=item.get("originalFileName", ""),
+                created_at=item.get("fileCreatedAt", ""),
+            )
+        )
+    return SearchResponse(assets=assets, next=next_page, previous=previous_page)

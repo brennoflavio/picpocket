@@ -36,6 +36,7 @@ Page {
     property string previewType: "timeline"
     property string albumId: ""
     property string personId: ""
+    property string locationId: ""
 
     header: AppHeader {
         id: pageHeader
@@ -63,7 +64,7 @@ Page {
 
     function loadPhotoDetails() {
         photoDetailPage.isLoading = true;
-        python.call('immich_client.preview', [photoId, previewType, albumId, personId], function (result) {
+        python.call('immich_client.preview', [photoId, previewType, albumId, personId, locationId], function (result) {
                 if (result) {
                     if (result.filePath) {
                         photoDetailPage.filePath = result.filePath;

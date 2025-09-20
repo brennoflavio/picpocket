@@ -26,12 +26,11 @@ Page {
                 "title": i18n.tr("People"),
                 "subtitle": i18n.tr("Browse photos by people"),
                 "icon": "contact"
+            }, {
+                "title": i18n.tr("Places"),
+                "subtitle": i18n.tr("Browse photos by location"),
+                "icon": "location"
             }
-            // {
-            //     title: i18n.tr("Places"),
-            //     subtitle: i18n.tr("Browse photos by location"),
-            //     icon: "location"
-            // },
             // {
             //     title: i18n.tr("Favorites"),
             //     subtitle: i18n.tr("Your favorite photos"),
@@ -57,6 +56,7 @@ Page {
                 pageStack.push(Qt.resolvedUrl("PeoplePage.qml"));
                 break;
             case i18n.tr("Places"):
+                pageStack.push(Qt.resolvedUrl("LocationsPage.qml"));
                 break;
             case i18n.tr("Favorites"):
                 break;

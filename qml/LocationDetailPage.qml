@@ -6,14 +6,14 @@ import "lib"
 import "ut_components"
 
 Page {
-    id: personDetailPage
+    id: locationDetailPage
 
-    property string personId: ""
-    property string personName: ""
+    property string locationId: ""
+    property string locationName: ""
 
     header: AppHeader {
         id: header
-        pageTitle: personName || i18n.tr("Person")
+        pageTitle: locationName || i18n.tr("Location")
         isRootPage: false
         showSettingsButton: true
         onSettingsClicked: {
@@ -21,27 +21,27 @@ Page {
         }
     }
 
-    property var personPhotosData: ({
+    property var locationPhotosData: ({
             "title": "",
             "images": [],
             "previous": "",
             "next": ""
         })
 
-    function loadPersonTimeline(hint) {
+    function loadLocationDetail(bucket) {
         loadingToast.showing = true;
-        loadingToast.message = i18n.tr("Loading person photos...");
+        loadingToast.message = i18n.tr("Loading location photos...");
         var args = [];
-        if (hint && hint !== "") {
-            args = [personId, hint];
+        if (bucket && bucket !== "") {
+            args = [locationId, bucket];
         } else {
-            args = [personId];
+            args = [locationId];
         }
-        python.call('immich_client.person_timeline', args, function (result) {
+        python.call('immich_client.location_detail', args, function (result) {
                 if (result) {
-                    personDetailPage.personPhotosData = result;
+                    locationDetailPage.locationPhotosData = result;
                 } else {
-                    personDetailPage.personPhotosData = {
+                    locationDetailPage.locationPhotosData = {
                         "title": "",
                         "images": [],
                         "previous": "",
@@ -58,13 +58,13 @@ Page {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
             importModule('immich_client', function () {
-                    loadPersonTimeline("");
+                    loadLocationDetail("");
                 });
         }
 
         onError: {
             loadingToast.showing = false;
-            loadingToast.message = i18n.tr("Error loading person photos");
+            loadingToast.message = i18n.tr("Error loading location photos");
         }
     }
 
@@ -76,13 +76,13 @@ Page {
             right: parent.right
             bottom: bottomBar.top
         }
-        defaultTitle: personDetailPage.personPhotosData.title
-        images: personDetailPage.personPhotosData.images
+        defaultTitle: locationDetailPage.locationPhotosData.title
+        images: locationDetailPage.locationPhotosData.images
 
         onImageClicked: {
             pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                    "previewType": "person",
-                    "personId": personDetailPage.personId,
+                    "previewType": "location",
+                    "locationId": locationDetailPage.locationId,
                     "filePath": imageData.filePath,
                     "photoId": imageData.id || ""
                 });
@@ -99,12 +99,12 @@ Page {
 
         leftButton: IconButton {
             iconName: "go-previous"
-            visible: personDetailPage.personPhotosData.previous !== undefined && personDetailPage.personPhotosData.previous !== ""
-            enabled: personDetailPage.personPhotosData.previous !== "" && !loadingToast.showing
+            visible: locationDetailPage.locationPhotosData.previous !== undefined && locationDetailPage.locationPhotosData.previous !== ""
+            enabled: locationDetailPage.locationPhotosData.previous !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
-                if (personDetailPage.personPhotosData.previous) {
-                    loadPersonTimeline(personDetailPage.personPhotosData.previous);
+                if (locationDetailPage.locationPhotosData.previous) {
+                    loadLocationDetail(locationDetailPage.locationPhotosData.previous);
                     gallery.scrollPosition = 0;
                 }
             }
@@ -112,12 +112,12 @@ Page {
 
         rightButton: IconButton {
             iconName: "go-next"
-            visible: personDetailPage.personPhotosData.next !== undefined && personDetailPage.personPhotosData.next !== ""
-            enabled: personDetailPage.personPhotosData.next !== "" && !loadingToast.showing
+            visible: locationDetailPage.locationPhotosData.next !== undefined && locationDetailPage.locationPhotosData.next !== ""
+            enabled: locationDetailPage.locationPhotosData.next !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
-                if (personDetailPage.personPhotosData.next) {
-                    loadPersonTimeline(personDetailPage.personPhotosData.next);
+                if (locationDetailPage.locationPhotosData.next) {
+                    loadLocationDetail(locationDetailPage.locationPhotosData.next);
                     gallery.scrollPosition = 0;
                 }
             }

@@ -17,6 +17,7 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
 import Lomiri.Content 1.3
+import Lomiri.Components.Popups 1.3
 import io.thp.pyotherside 1.4
 import "lib"
 import "ut_components"
@@ -36,8 +37,8 @@ Page {
     }
 
     property var galleryData: ({
-            "month": "",
-            "days": [],
+            "title": "",
+            "images": [],
             "previous": "",
             "next": ""
         })
@@ -85,61 +86,43 @@ Page {
         }
     }
 
-    Flickable {
-        id: flickable
+    Memories {
+        id: memories
         anchors {
             top: header.bottom
             left: parent.left
             right: parent.right
+        }
+        height: memoriesData.length > 0 ? units.gu(15) : 0
+        memoriesData: galleryPage.memoriesData
+        visible: memoriesData.length > 0
+
+        onMemoryClicked: {
+            pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
+                    "previewType": "memory",
+                    "filePath": memoryData.thumbnailUrl || "",
+                    "photoId": memoryData.id || ""
+                });
+        }
+    }
+
+    Gallery {
+        id: gallery
+        anchors {
+            top: memories.visible ? memories.bottom : header.bottom
+            left: parent.left
+            right: parent.right
             bottom: bottomBar.top
         }
-        contentHeight: memoriesColumn.height
-        clip: true
+        defaultTitle: galleryPage.galleryData.title
+        images: galleryPage.galleryData.images
 
-        PullToRefresh {
-            id: pullToRefresh
-            parent: flickable
-            target: flickable
-            refreshing: loadingToast.showing
-            onRefresh: {
-                python.call('immich_client.clear_cache', [], function () {
-                        loadTimeline("");
-                    });
-            }
-        }
-
-        Column {
-            id: memoriesColumn
-            width: parent.width
-
-            Memories {
-                id: memories
-                width: parent.width
-                memoriesData: galleryPage.memoriesData
-
-                onMemoryClicked: {
-                    pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                            "previewType": "memory",
-                            "filePath": memoryData.thumbnailUrl || "",
-                            "photoId": memoryData.id || ""
-                        });
-                }
-            }
-
-            Gallery {
-                id: gallery
-                width: parent.width
-                month: galleryPage.galleryData.month
-                days: galleryPage.galleryData.days
-
-                onItemClicked: {
-                    pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                            "previewType": "timeline",
-                            "filePath": imageData.filePath,
-                            "photoId": imageData.id || ""
-                        });
-                }
-            }
+        onImageClicked: {
+            pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
+                    "previewType": "timeline",
+                    "filePath": imageData.filePath,
+                    "photoId": imageData.id || ""
+                });
         }
     }
 
@@ -159,7 +142,7 @@ Page {
             onClicked: {
                 if (galleryPage.galleryData.previous) {
                     loadTimeline(galleryPage.galleryData.previous);
-                    flickable.contentY = 0;
+                    gallery.scrollPosition = 0;
                 }
             }
         }
@@ -172,7 +155,7 @@ Page {
             onClicked: {
                 if (galleryPage.galleryData.next) {
                     loadTimeline(galleryPage.galleryData.next);
-                    flickable.contentY = 0;
+                    gallery.scrollPosition = 0;
                 }
             }
         }
@@ -206,43 +189,16 @@ Page {
                 pageStack.push(uploadPickerPage);
             }
         }
-    }
 
-    AbstractButton {
-        id: scrollToTopButton
-        anchors {
-            right: parent.right
-            rightMargin: units.gu(2)
-            bottom: bottomBar.top
-            bottomMargin: units.gu(2)
-        }
-        width: units.gu(6)
-        height: units.gu(6)
-        visible: flickable.contentY > units.gu(10)
-        opacity: visible ? 1.0 : 0.0
-
-        Behavior on opacity  {
-            NumberAnimation {
-                duration: 200
-            }
-        }
-
-        onClicked: {
-            flickable.contentY = 0;
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: width / 2
-            color: theme.palette.normal.foreground
-            opacity: 0.9
-
-            Icon {
-                anchors.centerIn: parent
-                width: units.gu(3)
-                height: units.gu(3)
-                name: "up"
-                color: theme.palette.normal.foregroundText
+        IconButton {
+            iconName: "view-refresh"
+            text: i18n.tr("Refresh")
+            enabled: !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                python.call('immich_client.clear_cache', [], function () {
+                        loadTimeline("");
+                    });
             }
         }
     }
@@ -281,29 +237,60 @@ Page {
                 ]
             }
 
-            property int uploadIndex: 0
-            property int totalFiles: 0
             property var filesToUpload: []
 
-            function uploadNextFile() {
-                if (uploadIndex < filesToUpload.length) {
-                    var filePath = filesToUpload[uploadIndex];
-                    loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(uploadIndex + 1).arg(totalFiles);
-                    python.call('immich_client.upload_immich_photo', [filePath], function (result) {
-                            uploadIndex++;
-                            if (uploadIndex < filesToUpload.length) {
-                                uploadNextFile();
-                            } else {
-                                loadingToast.showing = false;
-                                python.call('immich_client.clear_cache', [], function () {
-                                        loadTimeline("");
-                                    });
-                                uploadIndex = 0;
-                                totalFiles = 0;
-                                filesToUpload = [];
-                            }
-                        });
+            function uploadFiles() {
+                uploadLoadingToast.showing = true;
+                uploadLoadingToast.message = i18n.tr("Uploading photos...");
+                python.call('immich_client.upload_immich_photo', [filesToUpload], function (result) {
+                        uploadLoadingToast.showing = false;
+                        var dialogTitle = result.success ? i18n.tr("Upload Successful") : i18n.tr("Upload Failed");
+                        var dialogMessage = result.message || i18n.tr("Upload completed");
+                        PopupUtils.open(uploadResultDialog, uploadPageInstance, {
+                                "title": dialogTitle,
+                                "text": dialogMessage
+                            });
+                        if (result.success) {
+                            python.call('immich_client.clear_cache', [], function () {
+                                    loadTimeline("");
+                                });
+                        }
+                        filesToUpload = [];
+                    });
+            }
+
+            Component {
+                id: uploadResultDialog
+                Dialog {
+                    id: dialogue
+                    property alias title: dialogueTitle.text
+                    property alias text: dialogueText.text
+
+                    Label {
+                        id: dialogueTitle
+                        fontSize: "large"
+                        font.bold: true
+                    }
+
+                    Label {
+                        id: dialogueText
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Button {
+                        text: i18n.tr("OK")
+                        onClicked: {
+                            PopupUtils.close(dialogue);
+                            pageStack.pop();
+                        }
+                    }
                 }
+            }
+
+            LoadToast {
+                id: uploadLoadingToast
+                showing: false
+                message: ""
             }
 
             ContentPeerPicker {
@@ -329,17 +316,8 @@ Page {
                                         var filePath = fileUrl.replace("file://", "");
                                         uploadPageInstance.filesToUpload.push(filePath);
                                     }
-                                    uploadPageInstance.totalFiles = uploadPageInstance.filesToUpload.length;
-                                    uploadPageInstance.uploadIndex = 0;
-                                    if (uploadPageInstance.totalFiles === 1) {
-                                        loadingToast.message = i18n.tr("Uploading photo...");
-                                    } else {
-                                        loadingToast.message = i18n.tr("Uploading %1 of %2...").arg(1).arg(uploadPageInstance.totalFiles);
-                                    }
-                                    loadingToast.showing = true;
-                                    uploadPageInstance.uploadNextFile();
+                                    uploadPageInstance.uploadFiles();
                                 }
-                                pageStack.pop();
                             }
                         });
                 }

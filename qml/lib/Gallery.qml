@@ -1,108 +1,298 @@
-/*
- * Copyright (C) 2025  Brenno Flávio de Almeida
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 3.
- *
- * picpocket is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-import QtQuick 2.7
+import QtQuick 2.12
 import Lomiri.Components 1.3
+import "../ut_components" as UTComponents
 
-Column {
-    id: gallery
+/*!
+ * \brief Gallery - A grid-based image gallery component
+ *
+ * Gallery displays images in a responsive grid layout with smooth scrolling,
+ * lazy image loading, and interactive features like image selection and scroll-to-top.
+ *
+ * Features:
+ * - Automatic grid layout (3 columns by default)
+ * - Responsive cell sizing based on available width
+ * - Asynchronous image loading with loading indicators
+ * - Smooth scrolling with scroll-to-top button
+ * - Image click handling for navigation or preview
+ *
+ * Example usage:
+ * \qml
+ * Gallery {
+ *     title: "My Photos"
+ *     images: [
+ *         { filePath: "image1.jpg", id: "1", metadata: {...} },
+ *         { filePath: "image2.jpg", id: "2", metadata: {...} },
+ *         { filePath: "image3.jpg", id: "3", metadata: {...} }
+ *     ]
+ *     onImageClicked: {
+ *         console.log("Selected image:", imageData.filePath)
+ *         // Navigate to full screen view
+ *     }
+ * }
+ * \endqml
+ */
+Item {
+    id: root
 
-    property string month: ""
-    property var days: []
+    /*!
+     * Array of image objects to display in the gallery.
+     * Each image object should contain at minimum a 'filePath' property.
+     * Image objects can contain any additional properties that will be passed through imageClicked.
+     */
+    property var images: []
 
-    signal itemClicked(var imageData)
+    /*! Size in pixels for each image cell in the grid. Auto-calculated based on width to fit 3 columns */
+    property int cellSize: calculateCellSize()
 
-    width: parent.width
-    spacing: 0
+    /*! Spacing between images in grid units */
+    property int spacing: units.gu(0.25)
 
-    Item {
-        width: parent.width
-        height: monthLabel.height + units.gu(3)
-        visible: gallery.month !== ""
+    /*! Current scroll position of the gallery (can be used to save/restore scroll state) */
+    property real scrollPosition: 0
 
-        Label {
-            id: monthLabel
-            anchors {
-                left: parent.left
-                leftMargin: units.gu(2)
-                top: parent.top
-                topMargin: units.gu(2)
-            }
-            text: gallery.month
-            fontSize: "x-large"
-            color: theme.palette.normal.baseText
-        }
+    /*! Whether the gallery can be scrolled/flicked by user interaction */
+    property alias interactive: gridView.interactive
+
+    /*! Optional main title displayed at the top of the gallery */
+    property string title: ""
+
+    /*! Default title to use when no image title is available */
+    property string defaultTitle: title
+
+    /*! Stores the last visible index to avoid unnecessary updates */
+    property int lastVisibleIndex: -1
+
+    /*!
+     * Emitted when an image is clicked/tapped.
+     * @param imageData The complete image object from the sections array
+     */
+    signal imageClicked(var imageData)
+
+    function calculateCellSize() {
+        if (width <= 0)
+            return units.gu(15);
+        var availableWidth = width - (spacing * 2);
+        return Math.max(units.gu(5), Math.floor((availableWidth - spacing * 2) / 3));
     }
 
-    Repeater {
-        model: gallery.days
+    onWidthChanged: {
+        cellSize = calculateCellSize();
+    }
 
-        Column {
-            width: parent.width
-            spacing: 0
+    property int itemsPerRow: Math.floor(width / (cellSize + spacing))
 
-            Item {
-                width: parent.width
-                height: dateLabel.height + units.gu(2)
-                visible: modelData.date !== ""
+    GridView {
+        id: gridView
+        anchors.fill: parent
+        anchors.topMargin: root.title ? headerItem.height : 0
 
-                Label {
-                    id: dateLabel
-                    anchors {
-                        left: parent.left
-                        leftMargin: units.gu(2)
-                        verticalCenter: parent.verticalCenter
-                    }
-                    text: modelData.date
-                    fontSize: "medium"
-                    color: theme.palette.normal.baseText
-                }
-            }
+        model: root.images
 
-            Grid {
-                width: parent.width
-                columns: 3
-                spacing: units.gu(0.2)
+        cellWidth: root.cellSize + root.spacing
+        cellHeight: root.cellSize + root.spacing
 
-                Repeater {
-                    model: modelData.images
+        cacheBuffer: height * 2
 
-                    GalleryItem {
-                        filePath: modelData.filePath || ""
-                        duration: modelData.duration || ""
-                        width: (gallery.width - units.gu(0.4)) / 3
-                        height: width
+        maximumFlickVelocity: units.gu(500)
+        flickDeceleration: units.gu(300)
 
-                        onClicked: gallery.itemClicked(modelData)
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+
+        onContentYChanged: {
+            root.scrollPosition = contentY;
+            scrollToTopButton.visible = contentY > height;
+            if (root.images.length > 0) {
+                var firstVisibleIndex = gridView.indexAt(root.spacing, contentY + root.spacing);
+                if (firstVisibleIndex !== -1 && firstVisibleIndex !== root.lastVisibleIndex) {
+                    root.lastVisibleIndex = firstVisibleIndex;
+                    if (root.images[firstVisibleIndex] && root.images[firstVisibleIndex].title) {
+                        root.title = root.images[firstVisibleIndex].title;
+                    } else {
+                        root.title = root.defaultTitle;
                     }
                 }
             }
+        }
+
+        delegate: Item {
+            width: gridView.cellWidth
+            height: gridView.cellHeight
 
             Rectangle {
-                width: parent.width
-                height: units.gu(2)
-                color: "transparent"
+                id: imageContainer
+                anchors.centerIn: parent
+                width: root.cellSize
+                height: root.cellSize
+                color: theme.palette.normal.base
+                clip: true
+
+                Image {
+                    id: thumbnail
+                    anchors.fill: parent
+
+                    source: modelData.filePath ? modelData.filePath : ""
+
+                    sourceSize.width: root.cellSize
+                    sourceSize.height: root.cellSize
+
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: theme.palette.normal.base
+                    visible: thumbnail.status !== Image.Ready && thumbnail.source !== ""
+
+                    ActivityIndicator {
+                        anchors.centerIn: parent
+                        running: parent.visible
+                        visible: running
+                    }
+                }
+
+                Rectangle {
+                    id: durationBadge
+                    visible: modelData.duration !== undefined && modelData.duration !== null
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        topMargin: units.gu(0.5)
+                        rightMargin: units.gu(0.5)
+                    }
+                    height: units.gu(2.5)
+                    width: durationLabel.width + units.gu(1.5)
+                    radius: units.gu(0.5)
+                    color: Qt.rgba(0, 0, 0, 0.7)
+
+                    Label {
+                        id: durationLabel
+                        anchors.centerIn: parent
+                        text: modelData.duration ? modelData.duration : ""
+                        fontSize: "small"
+                        color: "white"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+
+                    onClicked: {
+                        root.imageClicked(modelData);
+                    }
+                }
+            }
+        }
+
+        Timer {
+            id: loadTimer
+            interval: 100
+            repeat: false
+            onTriggered: {
+                gridView.positionViewAtBeginning();
+            }
+        }
+
+        onModelChanged: {
+            loadTimer.restart();
+            root.lastVisibleIndex = -1;
+            root.title = root.defaultTitle;
+        }
+    }
+
+    Item {
+        id: headerItem
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+        height: root.title ? units.gu(6) : 0
+        visible: root.title !== ""
+        z: 1
+
+        Rectangle {
+            anchors.fill: parent
+            color: theme.palette.normal.background
+
+            Label {
+                anchors {
+                    left: parent.left
+                    leftMargin: units.gu(2)
+                    verticalCenter: parent.verticalCenter
+                }
+                text: root.title
+                fontSize: "x-large"
+                color: theme.palette.normal.backgroundText
             }
         }
     }
 
-    Label {
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: i18n.tr("No images to display")
-        fontSize: "large"
-        color: theme.palette.disabled.baseText
-        visible: days.length === 0
+    Item {
+        id: scrollToTopButton
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            rightMargin: units.gu(2)
+            bottomMargin: units.gu(2)
+        }
+        width: units.gu(6)
+        height: units.gu(6)
+        visible: false
+        z: 10
+
+        opacity: visible ? 0.9 : 0
+
+        Behavior on opacity  {
+            NumberAnimation {
+                duration: 200
+            }
+        }
+
+        Rectangle {
+            id: buttonBackground
+            anchors.fill: parent
+            radius: width / 2
+            color: "#5D5D5D"
+
+            Icon {
+                anchors.centerIn: parent
+                name: "up"
+                width: units.gu(3)
+                height: units.gu(3)
+                color: "white"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    scrollAnimation.running = true;
+                }
+                onPressed: {
+                    buttonBackground.opacity = 0.7;
+                }
+                onReleased: {
+                    buttonBackground.opacity = 1;
+                }
+            }
+
+            Behavior on opacity  {
+                NumberAnimation {
+                    duration: 100
+                }
+            }
+        }
+    }
+
+    NumberAnimation {
+        id: scrollAnimation
+        target: gridView
+        property: "contentY"
+        to: 0
+        duration: 300
+        easing.type: Easing.OutCubic
     }
 }

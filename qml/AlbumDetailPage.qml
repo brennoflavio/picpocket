@@ -37,8 +37,8 @@ Page {
     }
 
     property var albumData: ({
-            "month": "",
-            "days": [],
+            "title": "",
+            "images": [],
             "previous": "",
             "next": ""
         })
@@ -57,8 +57,8 @@ Page {
                     albumDetailPage.albumData = result;
                 } else {
                     albumDetailPage.albumData = {
-                        "month": "",
-                        "days": [],
+                        "title": "",
+                        "images": [],
                         "previous": "",
                         "next": ""
                     };
@@ -83,43 +83,24 @@ Page {
         }
     }
 
-    Flickable {
-        id: flickable
+    Gallery {
+        id: gallery
         anchors {
             top: header.bottom
             left: parent.left
             right: parent.right
             bottom: bottomBar.top
         }
-        contentHeight: gallery.height
-        clip: true
+        defaultTitle: albumDetailPage.albumData.title
+        images: albumDetailPage.albumData.images
 
-        PullToRefresh {
-            id: pullToRefresh
-            parent: flickable
-            target: flickable
-            refreshing: loadingToast.showing
-            onRefresh: {
-                python.call('immich_client.clear_cache', [], function () {
-                        loadAlbumTimeline("");
-                    });
-            }
-        }
-
-        Gallery {
-            id: gallery
-            width: parent.width
-            month: albumDetailPage.albumData.month
-            days: albumDetailPage.albumData.days
-
-            onItemClicked: {
-                pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
-                        "previewType": "album",
-                        "albumId": albumDetailPage.albumId,
-                        "filePath": imageData.filePath,
-                        "photoId": imageData.id || ""
-                    });
-            }
+        onImageClicked: {
+            pageStack.push(Qt.resolvedUrl("PhotoDetail.qml"), {
+                    "previewType": "album",
+                    "albumId": albumDetailPage.albumId,
+                    "filePath": imageData.filePath,
+                    "photoId": imageData.id || ""
+                });
         }
     }
 
@@ -131,68 +112,15 @@ Page {
             bottom: parent.bottom
         }
 
-        leftButton: IconButton {
-            iconName: "go-previous"
-            visible: albumDetailPage.albumData.previous !== undefined && albumDetailPage.albumData.previous !== ""
-            enabled: albumDetailPage.albumData.previous !== "" && !loadingToast.showing
+        IconButton {
+            iconName: "view-refresh"
+            text: i18n.tr("Refresh")
+            enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
-                if (albumDetailPage.albumData.previous) {
-                    loadAlbumTimeline(albumDetailPage.albumData.previous);
-                    flickable.contentY = 0;
-                }
-            }
-        }
-
-        rightButton: IconButton {
-            iconName: "go-next"
-            visible: albumDetailPage.albumData.next !== undefined && albumDetailPage.albumData.next !== ""
-            enabled: albumDetailPage.albumData.next !== "" && !loadingToast.showing
-            opacity: enabled ? 1.0 : 0.5
-            onClicked: {
-                if (albumDetailPage.albumData.next) {
-                    loadAlbumTimeline(albumDetailPage.albumData.next);
-                    flickable.contentY = 0;
-                }
-            }
-        }
-    }
-
-    AbstractButton {
-        id: scrollToTopButton
-        anchors {
-            right: parent.right
-            rightMargin: units.gu(2)
-            bottom: bottomBar.top
-            bottomMargin: units.gu(2)
-        }
-        width: units.gu(6)
-        height: units.gu(6)
-        visible: flickable.contentY > units.gu(10)
-        opacity: visible ? 1.0 : 0.0
-
-        Behavior on opacity  {
-            NumberAnimation {
-                duration: 200
-            }
-        }
-
-        onClicked: {
-            flickable.contentY = 0;
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: width / 2
-            color: theme.palette.normal.foreground
-            opacity: 0.9
-
-            Icon {
-                anchors.centerIn: parent
-                width: units.gu(3)
-                height: units.gu(3)
-                name: "up"
-                color: theme.palette.normal.foregroundText
+                python.call('immich_client.clear_cache', [], function () {
+                        loadAlbumTimeline("");
+                    });
             }
         }
     }
