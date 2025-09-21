@@ -10,6 +10,7 @@ Page {
 
     property string locationId: ""
     property string locationName: ""
+    property var selectedImages: []
 
     header: AppHeader {
         id: header
@@ -87,6 +88,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            locationDetailPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            locationDetailPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -99,7 +108,7 @@ Page {
 
         leftButton: IconButton {
             iconName: "go-previous"
-            visible: locationDetailPage.locationPhotosData.previous !== undefined && locationDetailPage.locationPhotosData.previous !== ""
+            visible: locationDetailPage.locationPhotosData.previous !== undefined && locationDetailPage.locationPhotosData.previous !== "" && !gallery.selectionMode
             enabled: locationDetailPage.locationPhotosData.previous !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
@@ -110,9 +119,57 @@ Page {
             }
         }
 
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: locationDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < locationDetailPage.selectedImages.length; i++) {
+                    if (locationDetailPage.selectedImages[i].id) {
+                        imageIds.push(locationDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadLocationDetail("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: locationDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < locationDetailPage.selectedImages.length; i++) {
+                    if (locationDetailPage.selectedImages[i].id) {
+                        imageIds.push(locationDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadLocationDetail("");
+                            });
+                    });
+            }
+        }
+
         rightButton: IconButton {
             iconName: "go-next"
-            visible: locationDetailPage.locationPhotosData.next !== undefined && locationDetailPage.locationPhotosData.next !== ""
+            visible: locationDetailPage.locationPhotosData.next !== undefined && locationDetailPage.locationPhotosData.next !== "" && !gallery.selectionMode
             enabled: locationDetailPage.locationPhotosData.next !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {

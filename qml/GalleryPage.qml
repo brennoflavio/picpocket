@@ -44,6 +44,7 @@ Page {
         })
 
     property var memoriesData: []
+    property var selectedImages: []
 
     function loadTimeline(hint) {
         loadingToast.showing = true;
@@ -124,6 +125,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            galleryPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            galleryPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -165,6 +174,7 @@ Page {
             text: i18n.tr("Albums")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"));
             }
@@ -175,6 +185,7 @@ Page {
             text: i18n.tr("Library")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 pageStack.push(Qt.resolvedUrl("LibraryPage.qml"));
             }
@@ -185,6 +196,7 @@ Page {
             text: i18n.tr("Upload")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 pageStack.push(uploadPickerPage);
             }
@@ -195,9 +207,58 @@ Page {
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: galleryPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < galleryPage.selectedImages.length; i++) {
+                    if (galleryPage.selectedImages[i].id) {
+                        imageIds.push(galleryPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: galleryPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < galleryPage.selectedImages.length; i++) {
+                    if (galleryPage.selectedImages[i].id) {
+                        imageIds.push(galleryPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
                     });
             }
         }

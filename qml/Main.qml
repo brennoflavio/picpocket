@@ -32,14 +32,6 @@ MainView {
     width: units.gu(45)
     height: units.gu(75)
 
-    PushClient {
-        id: pushClient
-        appId: "picpocket.brennoflavio_picpocket"
-        onTokenChanged: {
-            python.call('immich_client.persist_token', [pushClient.token]);
-        }
-    }
-
     PageStack {
         id: pageStack
         anchors.fill: parent

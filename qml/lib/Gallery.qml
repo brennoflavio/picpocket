@@ -62,11 +62,60 @@ Item {
     /*! Stores the last visible index to avoid unnecessary updates */
     property int lastVisibleIndex: -1
 
+    /*! Whether the gallery is in selection mode */
+    property bool selectionMode: false
+
+    /*! List of selected image IDs or indices */
+    property var selectedImages: []
+
     /*!
      * Emitted when an image is clicked/tapped.
      * @param imageData The complete image object from the sections array
      */
     signal imageClicked(var imageData)
+
+    /*!
+     * Emitted when selection mode is exited
+     */
+    signal selectionModeExited
+
+    /*!
+     * Emitted when the selection changes or selection mode is entered/exited
+     * @param selectedImages Array of selected image objects
+     */
+    signal selectionChanged(var selectedImages)
+
+    function exitSelectionMode() {
+        selectionMode = false;
+        selectedImages = [];
+        selectionModeExited();
+        selectionChanged([]);
+    }
+
+    function toggleImageSelection(imageData, index) {
+        var identifier = imageData.id ? imageData.id : index;
+        var idx = selectedImages.indexOf(identifier);
+        var newSelection = selectedImages.slice();
+        if (idx === -1) {
+            newSelection.push(identifier);
+        } else {
+            newSelection.splice(idx, 1);
+        }
+        selectedImages = newSelection;
+        var selectedObjects = [];
+        for (var i = 0; i < images.length; i++) {
+            var id = images[i].id ? images[i].id : i;
+            if (selectedImages.indexOf(id) !== -1) {
+                selectedObjects.push(images[i]);
+            }
+        }
+        selectionChanged(selectedObjects);
+    }
+
+    function isImageSelected(imageData, index) {
+        var identifier = imageData.id ? imageData.id : index;
+        return selectedImages.indexOf(identifier) !== -1;
+    }
 
     function calculateCellSize() {
         if (width <= 0)
@@ -177,11 +226,48 @@ Item {
                     }
                 }
 
+                Rectangle {
+                    id: selectionIndicator
+                    visible: root.selectionMode
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        topMargin: units.gu(1)
+                        leftMargin: units.gu(1)
+                    }
+                    width: units.gu(3)
+                    height: units.gu(3)
+                    radius: width / 2
+                    color: root.isImageSelected(modelData, index) ? theme.palette.normal.positive : Qt.rgba(1, 1, 1, 0.8)
+                    border.width: units.gu(0.2)
+                    border.color: root.isImageSelected(modelData, index) ? theme.palette.normal.positive : Qt.rgba(0.3, 0.3, 0.3, 0.8)
+
+                    Icon {
+                        anchors.centerIn: parent
+                        name: "tick"
+                        width: units.gu(2)
+                        height: units.gu(2)
+                        color: "white"
+                        visible: root.isImageSelected(modelData, index)
+                    }
+                }
+
                 MouseArea {
                     anchors.fill: parent
 
                     onClicked: {
-                        root.imageClicked(modelData);
+                        if (root.selectionMode) {
+                            root.toggleImageSelection(modelData, index);
+                        } else {
+                            root.imageClicked(modelData);
+                        }
+                    }
+
+                    onPressAndHold: {
+                        if (!root.selectionMode) {
+                            root.selectionMode = true;
+                            root.toggleImageSelection(modelData, index);
+                        }
                     }
                 }
             }
@@ -294,5 +380,61 @@ Item {
         to: 0
         duration: 300
         easing.type: Easing.OutCubic
+    }
+
+    Item {
+        id: cancelSelectionButton
+        anchors {
+            left: parent.left
+            bottom: parent.bottom
+            leftMargin: units.gu(2)
+            bottomMargin: units.gu(2)
+        }
+        width: units.gu(6)
+        height: units.gu(6)
+        visible: root.selectionMode
+        z: 10
+
+        opacity: visible ? 0.9 : 0
+
+        Behavior on opacity  {
+            NumberAnimation {
+                duration: 200
+            }
+        }
+
+        Rectangle {
+            id: cancelButtonBackground
+            anchors.fill: parent
+            radius: width / 2
+            color: "#5D5D5D"
+
+            Icon {
+                anchors.centerIn: parent
+                name: "close"
+                width: units.gu(3)
+                height: units.gu(3)
+                color: "white"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    root.exitSelectionMode();
+                }
+                onPressed: {
+                    cancelButtonBackground.opacity = 0.7;
+                }
+                onReleased: {
+                    cancelButtonBackground.opacity = 1;
+                }
+            }
+
+            Behavior on opacity  {
+                NumberAnimation {
+                    duration: 100
+                }
+            }
+        }
     }
 }

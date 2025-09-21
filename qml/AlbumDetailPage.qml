@@ -25,6 +25,7 @@ Page {
 
     property string albumId: ""
     property string albumName: ""
+    property var selectedImages: []
 
     header: AppHeader {
         id: header
@@ -102,6 +103,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            albumDetailPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            albumDetailPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -116,10 +125,59 @@ Page {
             iconName: "view-refresh"
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
+            visible: !gallery.selectionMode
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadAlbumTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: albumDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < albumDetailPage.selectedImages.length; i++) {
+                    if (albumDetailPage.selectedImages[i].id) {
+                        imageIds.push(albumDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadAlbumTimeline("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: albumDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < albumDetailPage.selectedImages.length; i++) {
+                    if (albumDetailPage.selectedImages[i].id) {
+                        imageIds.push(albumDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadAlbumTimeline("");
+                            });
                     });
             }
         }

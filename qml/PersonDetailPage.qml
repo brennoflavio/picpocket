@@ -10,6 +10,7 @@ Page {
 
     property string personId: ""
     property string personName: ""
+    property var selectedImages: []
 
     header: AppHeader {
         id: header
@@ -87,6 +88,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            personDetailPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            personDetailPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -99,7 +108,7 @@ Page {
 
         leftButton: IconButton {
             iconName: "go-previous"
-            visible: personDetailPage.personPhotosData.previous !== undefined && personDetailPage.personPhotosData.previous !== ""
+            visible: !gallery.selectionMode && personDetailPage.personPhotosData.previous !== undefined && personDetailPage.personPhotosData.previous !== ""
             enabled: personDetailPage.personPhotosData.previous !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
@@ -112,7 +121,7 @@ Page {
 
         rightButton: IconButton {
             iconName: "go-next"
-            visible: personDetailPage.personPhotosData.next !== undefined && personDetailPage.personPhotosData.next !== ""
+            visible: !gallery.selectionMode && personDetailPage.personPhotosData.next !== undefined && personDetailPage.personPhotosData.next !== ""
             enabled: personDetailPage.personPhotosData.next !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
@@ -120,6 +129,54 @@ Page {
                     loadPersonTimeline(personDetailPage.personPhotosData.next);
                     gallery.scrollPosition = 0;
                 }
+            }
+        }
+
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: personDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < personDetailPage.selectedImages.length; i++) {
+                    if (personDetailPage.selectedImages[i].id) {
+                        imageIds.push(personDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadPersonTimeline("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: personDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < personDetailPage.selectedImages.length; i++) {
+                    if (personDetailPage.selectedImages[i].id) {
+                        imageIds.push(personDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadPersonTimeline("");
+                            });
+                    });
             }
         }
     }

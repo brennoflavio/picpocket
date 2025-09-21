@@ -39,6 +39,7 @@ Page {
         })
 
     property string currentQuery: ""
+    property var selectedImages: []
 
     function performSearch(query, hint) {
         if (query === "") {
@@ -124,6 +125,14 @@ Page {
                     "searchQuery": currentQuery
                 });
         }
+
+        onSelectionModeExited: {
+            searchPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            searchPage.selectedImages = images;
+        }
     }
 
     Label {
@@ -181,6 +190,7 @@ Page {
             text: i18n.tr("Clear")
             enabled: currentQuery !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 searchInput.text = "";
                 currentQuery = "";
@@ -190,6 +200,54 @@ Page {
                     "previous": "",
                     "next": ""
                 };
+            }
+        }
+
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: searchPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < searchPage.selectedImages.length; i++) {
+                    if (searchPage.selectedImages[i].id) {
+                        imageIds.push(searchPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                performSearch(currentQuery, "");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: searchPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < searchPage.selectedImages.length; i++) {
+                    if (searchPage.selectedImages[i].id) {
+                        imageIds.push(searchPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                performSearch(currentQuery, "");
+                            });
+                    });
             }
         }
     }

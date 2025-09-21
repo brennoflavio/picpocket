@@ -23,6 +23,8 @@ import "ut_components"
 Page {
     id: favoritesPage
 
+    property var selectedImages: []
+
     header: AppHeader {
         id: header
         pageTitle: i18n.tr('Favorites')
@@ -81,6 +83,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            favoritesPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            favoritesPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -93,7 +103,7 @@ Page {
 
         leftButton: IconButton {
             iconName: "go-previous"
-            visible: favoritesPage.galleryData.previous !== undefined && favoritesPage.galleryData.previous !== ""
+            visible: favoritesPage.galleryData.previous !== undefined && favoritesPage.galleryData.previous !== "" && !gallery.selectionMode
             enabled: favoritesPage.galleryData.previous !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
@@ -106,7 +116,7 @@ Page {
 
         rightButton: IconButton {
             iconName: "go-next"
-            visible: favoritesPage.galleryData.next !== undefined && favoritesPage.galleryData.next !== ""
+            visible: favoritesPage.galleryData.next !== undefined && favoritesPage.galleryData.next !== "" && !gallery.selectionMode
             enabled: favoritesPage.galleryData.next !== "" && !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
@@ -121,10 +131,59 @@ Page {
             iconName: "view-refresh"
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
+            visible: !gallery.selectionMode
             opacity: enabled ? 1.0 : 0.5
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "save"
+            text: i18n.tr("Archive")
+            enabled: favoritesPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Archiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < favoritesPage.selectedImages.length; i++) {
+                    if (favoritesPage.selectedImages[i].id) {
+                        imageIds.push(favoritesPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.archive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: favoritesPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < favoritesPage.selectedImages.length; i++) {
+                    if (favoritesPage.selectedImages[i].id) {
+                        imageIds.push(favoritesPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
                     });
             }
         }

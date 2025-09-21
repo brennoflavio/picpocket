@@ -270,7 +270,7 @@ def favorite(image_id: str, favorite: bool):
 
 
 @crash_reporter
-def archive(image_id: str):
+def archive(*image_ids: str):
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -279,8 +279,8 @@ def archive(image_id: str):
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, f"/api/assets/{image_id}"),
-            json={"visibility": "archive"},
+            url=urljoin(url, "/api/assets"),
+            json={"ids": list(image_ids), "visibility": "archive"},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -288,7 +288,7 @@ def archive(image_id: str):
 
 
 @crash_reporter
-def delete(image_id: str):
+def delete(*image_ids: str):
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -298,7 +298,7 @@ def delete(image_id: str):
 
         response = http.delete(
             url=urljoin(url, "/api/assets"),
-            json={"ids": [image_id]},
+            json={"ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -882,7 +882,7 @@ def archived_preview(image_id: str) -> Preview:
 
 
 @crash_reporter
-def unarchive(image_id: str):
+def unarchive(*image_ids: str):
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -891,8 +891,8 @@ def unarchive(image_id: str):
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, f"/api/assets/{image_id}"),
-            json={"visibility": "timeline"},
+            url=urljoin(url, "/api/assets"),
+            json={"ids": list(image_ids), "visibility": "timeline"},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -926,7 +926,7 @@ def deleted_preview(image_id: str) -> Preview:
 
 
 @crash_reporter
-def undelete(image_id: str):
+def undelete(*image_ids: str):
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -936,7 +936,7 @@ def undelete(image_id: str):
 
         response = http.post(
             url=urljoin(url, "/api/trash/restore/assets"),
-            json={"ids": [image_id]},
+            json={"ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -945,7 +945,7 @@ def undelete(image_id: str):
 
 
 @crash_reporter
-def permanently_delete(image_id: str):
+def permanently_delete(*image_ids: str):
     with KV() as kv:
         url = kv.get("immich.url")
         token = kv.get("immich.token")
@@ -955,7 +955,7 @@ def permanently_delete(image_id: str):
 
         response = http.delete(
             url=urljoin(url, "/api/assets"),
-            json={"force": "true", "ids": [image_id]},
+            json={"force": "true", "ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
