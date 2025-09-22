@@ -210,6 +210,7 @@ def get_bucket(url: str, token: str, current: str, query_params: Dict[str, str] 
             json_response = response.json()
             time_buckets = [x.get("timeBucket") for x in json_response]
 
+            first = ""
             for i, bucket in enumerate(time_buckets):
                 if i == 0:
                     kv.put_cached(f"bucket.{hashed_args}.first", bucket, ttl_seconds=3600)
