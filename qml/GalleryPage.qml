@@ -216,6 +216,25 @@ Page {
         }
 
         IconButton {
+            iconName: "image-x-generic-symbolic"
+            text: i18n.tr("Add to Album")
+            enabled: galleryPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                var imageIds = [];
+                for (var i = 0; i < galleryPage.selectedImages.length; i++) {
+                    if (galleryPage.selectedImages[i].id) {
+                        imageIds.push(galleryPage.selectedImages[i].id);
+                    }
+                }
+                pageStack.push(Qt.resolvedUrl("AlbumSelectorPage.qml"), {
+                        "selectedAssetIds": imageIds
+                    });
+            }
+        }
+
+        IconButton {
             iconName: "save"
             text: i18n.tr("Archive")
             enabled: galleryPage.selectedImages.length > 0 && !loadingToast.showing

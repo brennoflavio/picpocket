@@ -121,7 +121,17 @@ Item {
         if (width <= 0)
             return units.gu(15);
         var availableWidth = width - (spacing * 2);
-        return Math.max(units.gu(5), Math.floor((availableWidth - spacing * 2) / 3));
+        var targetCellSize = units.gu(15);
+        var minCellSize = units.gu(10);
+        var columns = Math.floor(availableWidth / targetCellSize);
+        if (columns < 3)
+            columns = 3;
+        var cellSize = Math.floor((availableWidth - spacing * (columns - 1)) / columns);
+        if (cellSize < minCellSize) {
+            columns = Math.floor(availableWidth / minCellSize);
+            cellSize = Math.floor((availableWidth - spacing * (columns - 1)) / columns);
+        }
+        return Math.max(minCellSize, cellSize);
     }
 
     onWidthChanged: {

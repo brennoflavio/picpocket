@@ -38,6 +38,8 @@ Page {
             "next": ""
         })
 
+    property var selectedImages: []
+
     function loadTimeline(hint) {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading deleted photos...");
@@ -81,6 +83,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            deletedPhotosPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            deletedPhotosPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -122,9 +132,58 @@ Page {
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "view-restore"
+            text: i18n.tr("Restore")
+            enabled: deletedPhotosPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Restoring photos...");
+                var imageIds = [];
+                for (var i = 0; i < deletedPhotosPage.selectedImages.length; i++) {
+                    if (deletedPhotosPage.selectedImages[i].id) {
+                        imageIds.push(deletedPhotosPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.undelete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "toolkit_cross"
+            text: i18n.tr("Delete")
+            enabled: deletedPhotosPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Permanently deleting photos...");
+                var imageIds = [];
+                for (var i = 0; i < deletedPhotosPage.selectedImages.length; i++) {
+                    if (deletedPhotosPage.selectedImages[i].id) {
+                        imageIds.push(deletedPhotosPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.permanently_delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
                     });
             }
         }

@@ -15,8 +15,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 APP_NAME = "picpocket.brennoflavio"
-DEFAULT_CACHE_DAYS = 30
 CRASH_REPORT_URL = "https://ut.brennoflavio.com.br/crash"
-CRON_URL = "https://ut.brennoflavio.com.br/cron"
-CRON_DEFAULT_EXPRESSION = "*/10 * * * *"
-APP_ID = "picpocket.brennoflavio_picpocket"

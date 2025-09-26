@@ -17,20 +17,17 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
 import QtQuick.Layouts 1.3
+import io.thp.pyotherside 1.4
 import "lib"
 import "ut_components"
 
 Page {
-    id: albumsPage
+    id: albumSelectorPage
+
+    property var selectedAssetIds: []
 
     Component.onCompleted: {
         loadAlbums();
-    }
-
-    onVisibleChanged: {
-        if (visible) {
-            loadAlbums();
-        }
     }
 
     function loadAlbums() {
@@ -51,62 +48,39 @@ Page {
                             };
                         });
                 }
+                refreshing = false;
             });
-        refreshing = false;
     }
 
     header: AppHeader {
         id: header
-        pageTitle: i18n.tr("Albums")
+        pageTitle: i18n.tr("Select Album")
         isRootPage: false
-        showSettingsButton: true
-        onSettingsClicked: {
-            pageStack.push(Qt.resolvedUrl("ConfigurationPage.qml"));
-        }
+        showSettingsButton: false
     }
 
     property bool refreshing: false
+    property bool addingToAlbum: false
     property var albumsData: []
 
-    Component {
-        id: createAlbumDialog
-        Dialog {
-            id: dialogue
-            title: i18n.tr("New Album")
+    Python {
+        id: python
 
-            InputField {
-                id: albumNameInput
-                title: i18n.tr("Album Name")
-                placeholder: i18n.tr("Enter album name")
-                required: true
-            }
+        Component.onCompleted: {
+            addImportPath(Qt.resolvedUrl('../src/'));
+            importModule('immich_client', function () {});
+        }
 
-            Button {
-                text: i18n.tr("Cancel")
-                onClicked: PopupUtils.close(dialogue)
-            }
-
-            Button {
-                text: i18n.tr("Create")
-                color: theme.palette.normal.positive
-                enabled: albumNameInput.isValid && albumNameInput.text.trim().length > 0
-                onClicked: {
-                    var albumName = albumNameInput.text.trim();
-                    PopupUtils.close(dialogue);
-                    python.call('immich_client.add_album', [albumName], function (result) {
-                            python.call('immich_client.clear_cache', [], function () {
-                                    loadAlbums();
-                                });
-                        });
-                }
-            }
+        onError: {
+            refreshing = false;
+            addingToAlbum = false;
         }
     }
 
     LoadToast {
         id: loadToast
-        message: i18n.tr("Loading albums...")
-        showing: refreshing
+        message: addingToAlbum ? i18n.tr("Adding photos to album...") : i18n.tr("Loading albums...")
+        showing: refreshing || addingToAlbum
     }
 
     CardList {
@@ -115,11 +89,11 @@ Page {
             top: header.bottom
             left: parent.left
             right: parent.right
-            bottom: bottomBar.top
+            bottom: parent.bottom
             topMargin: units.gu(2)
             leftMargin: units.gu(2)
             rightMargin: units.gu(2)
-            bottomMargin: units.gu(1)
+            bottomMargin: units.gu(2)
         }
         items: albumsData
         showSearchBar: true
@@ -127,39 +101,13 @@ Page {
         emptyMessage: i18n.tr("No albums")
 
         onItemClicked: {
-            pageStack.push(Qt.resolvedUrl("AlbumDetailPage.qml"), {
-                    "albumId": item.id,
-                    "albumName": item.title
+            addingToAlbum = true;
+            python.call('immich_client.add_assets_to_album', [item.id, selectedAssetIds], function (result) {
+                    python.call('immich_client.clear_cache', [], function () {
+                            addingToAlbum = false;
+                            pageStack.pop();
+                        });
                 });
-        }
-    }
-
-    BottomBar {
-        id: bottomBar
-        anchors {
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-        }
-
-        IconButton {
-            iconName: "add"
-            text: i18n.tr("Add Album")
-            onClicked: {
-                PopupUtils.open(createAlbumDialog);
-            }
-        }
-
-        IconButton {
-            iconName: "view-refresh"
-            text: i18n.tr("Refresh")
-            onClicked: {
-                refreshing = true;
-                python.call('immich_client.clear_cache', [], function () {
-                        refreshing = false;
-                        loadAlbums();
-                    });
-            }
         }
     }
 }

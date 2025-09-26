@@ -38,6 +38,8 @@ Page {
             "next": ""
         })
 
+    property var selectedImages: []
+
     function loadTimeline(hint) {
         loadingToast.showing = true;
         loadingToast.message = i18n.tr("Loading archived photos...");
@@ -81,6 +83,14 @@ Page {
                     "photoId": imageData.id || ""
                 });
         }
+
+        onSelectionModeExited: {
+            archivedPage.selectedImages = [];
+        }
+
+        onSelectionChanged: function (images) {
+            archivedPage.selectedImages = images;
+        }
     }
 
     BottomBar {
@@ -122,9 +132,34 @@ Page {
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
             opacity: enabled ? 1.0 : 0.5
+            visible: !gallery.selectionMode
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "reset"
+            text: i18n.tr("Unarchive")
+            enabled: archivedPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Unarchiving photos...");
+                var imageIds = [];
+                for (var i = 0; i < archivedPage.selectedImages.length; i++) {
+                    if (archivedPage.selectedImages[i].id) {
+                        imageIds.push(archivedPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.unarchive', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
                     });
             }
         }

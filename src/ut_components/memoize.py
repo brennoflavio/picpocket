@@ -179,3 +179,34 @@ def delete_memoized(function: Callable):
     hashed_function_name = hash_function_name(function)
     with KV() as kv:
         kv.delete_partial(f"memoize.{hashed_function_name}")
+
+
+def delete_all_memoized():
+    """
+    Clear all cached entries for all memoized functions.
+
+    This function removes all cached results for all memoized functions,
+    regardless of what arguments were used when calling them. This is useful
+    when you need to invalidate the cache for all functions, such as after
+    updating underlying data or when testing.
+
+    Example:
+        >>> from src.ut_components.memoize import memoize, delete_memoized
+        >>>
+        >>> @memoize(ttl_seconds=3600)
+        >>> def get_user_data(user_id: str):
+        ...     # Expensive database query
+        ...     return fetch_from_database(user_id)
+        >>>
+        >>> # Use the function normally
+        >>> data1 = get_user_data("user123")  # Fetches from database
+        >>> data2 = get_user_data("user123")  # Returns from cache
+        >>>
+        >>> # Clear all cached results for this function
+        >>> delete_all_memoized(get_user_data)
+        >>>
+        >>> # Next call will fetch from database again
+        >>> data3 = get_user_data("user123")  # Fetches from database
+    """
+    with KV() as kv:
+        kv.delete_partial("memoize")

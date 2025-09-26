@@ -15,6 +15,7 @@
  */
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import Lomiri.Components.Popups 1.3
 import QtQuick.Layouts 1.3
 import io.thp.pyotherside 1.4
 import "lib"
@@ -122,6 +123,23 @@ Page {
         }
 
         IconButton {
+            iconName: "delete"
+            text: i18n.tr("Delete Album")
+            enabled: !loadingToast.showing
+            visible: !gallery.selectionMode
+            opacity: enabled ? 1.0 : 0.5
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Deleting album...");
+                python.call('immich_client.delete_album', [albumId], function (result) {
+                        python.call('immich_client.clear_cache', [], function () {
+                                pageStack.pop();
+                            });
+                    });
+            }
+        }
+
+        IconButton {
             iconName: "view-refresh"
             text: i18n.tr("Refresh")
             enabled: !loadingToast.showing
@@ -130,6 +148,30 @@ Page {
             onClicked: {
                 python.call('immich_client.clear_cache', [], function () {
                         loadAlbumTimeline("");
+                    });
+            }
+        }
+
+        IconButton {
+            iconName: "remove-from-group"
+            text: i18n.tr("Remove from Album")
+            enabled: albumDetailPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Removing from album...");
+                var imageIds = [];
+                for (var i = 0; i < albumDetailPage.selectedImages.length; i++) {
+                    if (albumDetailPage.selectedImages[i].id) {
+                        imageIds.push(albumDetailPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete_assets_to_album', [albumId, imageIds], function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadAlbumTimeline("");
+                            });
                     });
             }
         }

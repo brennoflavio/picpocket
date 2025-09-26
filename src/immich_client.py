@@ -15,12 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from src.constants import (
-    APP_ID,
     APP_NAME,
     CRASH_REPORT_URL,
-    CRON_DEFAULT_EXPRESSION,
-    CRON_URL,
-    DEFAULT_CACHE_DAYS,
 )
 from src.ut_components import setup
 
@@ -52,7 +48,7 @@ from src.immich_utils import (
 from src.ut_components.config import get_cache_path
 from src.ut_components.crash import crash_reporter, get_crash_report, set_crash_report
 from src.ut_components.kv import KV
-from src.ut_components.memoize import delete_memoized, memoize
+from src.ut_components.memoize import delete_all_memoized, memoize
 from src.ut_components.utils import dataclass_to_dict
 
 
@@ -230,18 +226,6 @@ def original(image_id: str) -> str:
 
 
 @crash_reporter
-def set_cache_days(days: int):
-    with KV() as kv:
-        kv.put("settings.cache.days", days)
-
-
-@crash_reporter
-def get_cache_days() -> int:
-    with KV() as kv:
-        return kv.get("settings.cache.days", DEFAULT_CACHE_DAYS, True) or DEFAULT_CACHE_DAYS
-
-
-@crash_reporter
 def logout():
     with KV() as kv:
         kv.delete("immich.url")
@@ -266,7 +250,7 @@ def favorite(image_id: str, favorite: bool):
 
         kv.put(f"photo.{image_id}.favorite", favorite, ttl_seconds=300)
         kv.delete_partial("favorite")
-        delete_memoized(base_timeline)
+        delete_all_memoized()
 
 
 @crash_reporter
@@ -284,7 +268,7 @@ def archive(*image_ids: str):
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 @crash_reporter
@@ -302,7 +286,7 @@ def delete(*image_ids: str):
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 def delete_cache():
@@ -326,30 +310,6 @@ def persist_token(token: str):
 
 
 @crash_reporter
-def set_auto_sync(enabled: bool):
-    with KV() as kv:
-        token = kv.get("ut.notification.token")
-        if enabled:
-            data = {
-                "appid": APP_ID,
-                "token": token,
-                "cron_expression": CRON_DEFAULT_EXPRESSION,
-            }
-            response = http.post(CRON_URL, json=data)
-            response.raise_for_status()
-        else:
-            response = http.delete(CRON_URL, json={"appid": APP_ID, "token": token})
-            response.raise_for_status()
-        kv.put("settings.sync.auto", enabled)
-
-
-@crash_reporter
-def get_auto_sync() -> bool:
-    with KV() as kv:
-        return kv.get("settings.sync.auto", False, True) or False
-
-
-@crash_reporter
 def clear_cache():
     with KV() as kv:
         kv.delete_partial("photo")
@@ -362,7 +322,7 @@ def clear_cache():
         kv.delete_partial("person")
     delete_buckets()
     delete_asset_info()
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 @dataclass
@@ -486,7 +446,7 @@ def albums():
 
             thumbnail_asset_id = album.get("albumThumbnailAssetId")
 
-            if not id_ or not thumbnail_asset_id:
+            if not id_:
                 continue
 
             file_path = download_thumbnail(url, token, thumbnail_asset_id)
@@ -897,7 +857,7 @@ def unarchive(*image_ids: str):
         )
         response.raise_for_status()
         kv.delete_partial("archived")
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 def deleted_timeline(bucket: str = "") -> TimelineResponse:
@@ -941,7 +901,7 @@ def undelete(*image_ids: str):
         )
         response.raise_for_status()
         kv.delete_partial("deleted")
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 @crash_reporter
@@ -960,7 +920,7 @@ def permanently_delete(*image_ids: str):
         )
         response.raise_for_status()
         kv.delete_partial("deleted")
-    delete_memoized(base_timeline)
+    delete_all_memoized()
 
 
 @crash_reporter
@@ -1034,3 +994,81 @@ def search_preview(image_id: str, query: str) -> Preview:
             archived=asset_info_data.archived,
             deleted=asset_info_data.deleted,
         )
+
+
+@crash_reporter
+@dataclass_to_dict
+def add_album(name: str = "") -> ImmichResponse:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.post(
+            url=urljoin(url, "/api/albums"),
+            json={"albumName": name},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        return ImmichResponse(success=True, message="Album created successfully")
+
+
+@crash_reporter
+@dataclass_to_dict
+def delete_album(album_id: str) -> ImmichResponse:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.delete(
+            url=urljoin(url, f"/api/albums/{album_id}"),
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+
+        return ImmichResponse(success=True, message="Album deleted successfully")
+
+
+@crash_reporter
+@dataclass_to_dict
+def add_assets_to_album(album_id: str, asset_ids: List[str]) -> ImmichResponse:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.put(
+            url=urljoin(url, f"/api/albums/{album_id}/assets"),
+            headers={"Authorization": f"Bearer {token}"},
+            json={"ids": asset_ids},
+        )
+        response.raise_for_status()
+
+        return ImmichResponse(success=True, message="Assets added to album successfully")
+
+
+@crash_reporter
+@dataclass_to_dict
+def delete_assets_to_album(album_id: str, asset_ids: List[str]) -> ImmichResponse:
+    with KV() as kv:
+        url = kv.get("immich.url")
+        token = kv.get("immich.token")
+
+        if not url or not token:
+            raise ValueError("Missing URL or token")
+
+        response = http.delete(
+            url=urljoin(url, f"/api/albums/{album_id}/assets"),
+            headers={"Authorization": f"Bearer {token}"},
+            json={"ids": asset_ids},
+        )
+        response.raise_for_status()
+
+        return ImmichResponse(success=True, message="Assets deleted from album successfully")

@@ -22,9 +22,7 @@ import "ut_components"
 Page {
     id: configurationPage
 
-    property int cacheDays: 7
     property bool crashLogsEnabled: false
-    property bool autoSyncEnabled: false
 
     header: AppHeader {
         pageTitle: i18n.tr("Configuration")
@@ -37,33 +35,15 @@ Page {
     }
 
     function loadConfiguration() {
-        python.call('immich_client.get_cache_days', [], function (days) {
-                if (days !== null && days !== undefined) {
-                    configurationPage.cacheDays = days;
-                }
-            });
         python.call('immich_client.get_crash_logs', [], function (enabled) {
                 if (enabled !== null && enabled !== undefined) {
                     configurationPage.crashLogsEnabled = enabled;
                 }
             });
-        python.call('immich_client.get_auto_sync', [], function (enabled) {
-                if (enabled !== null && enabled !== undefined) {
-                    configurationPage.autoSyncEnabled = enabled;
-                }
-            });
-    }
-
-    function setCacheDays(days) {
-        python.call('immich_client.set_cache_days', [days], function () {});
     }
 
     function setCrashLogs(enabled) {
         python.call('immich_client.set_crash_logs', [enabled], function () {});
-    }
-
-    function setAutoSync(enabled) {
-        python.call('immich_client.set_auto_sync', [enabled], function () {});
     }
 
     function logout() {
@@ -99,23 +79,6 @@ Page {
 
             ConfigurationGroup {
                 title: i18n.tr("Immich")
-
-                NumberOption {
-                    title: i18n.tr("Cache days")
-                    subtitle: i18n.tr("Number of days to cache images")
-                    value: configurationPage.cacheDays
-                    minimumValue: 1
-                    maximumValue: 120
-                    onValueUpdated: function (newValue) {
-                        configurationPage.cacheDays = newValue;
-                        configurationPage.setCacheDays(newValue);
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: units.gu(2)
-                }
 
                 ActionButton {
                     text: i18n.tr("Clear All Cache")

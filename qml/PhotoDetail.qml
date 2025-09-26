@@ -422,7 +422,7 @@ Page {
         }
 
         IconButton {
-            iconName: "reset"
+            iconName: "view-restore"
             text: i18n.tr("Restore")
             visible: photoDetailPage.isDeleted
             onClicked: {
