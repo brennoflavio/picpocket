@@ -21,6 +21,7 @@ import Lomiri.Content 1.3
 import QtMultimedia 5.12
 import io.thp.pyotherside 1.4
 import "ut_components"
+import UserMetrics 0.1
 
 Page {
     id: photoDetailPage
@@ -48,6 +49,14 @@ Page {
         showSettingsButton: false
     }
 
+    Metric {
+        id: photosViewedMetric
+        name: "immich_photos_viewed"
+        format: "%1 " + i18n.tr("Immich photos viewed today")
+        emptyFormat: i18n.tr("No Immich photos viewed today")
+        domain: "picpocket.brennoflavio"
+    }
+
     Python {
         id: python
 
@@ -67,6 +76,7 @@ Page {
 
     function loadPhotoDetails() {
         photoDetailPage.isLoading = true;
+        photosViewedMetric.increment(1);
         python.call('immich_client.preview', [photoId, previewType, albumId, personId, locationId, searchQuery], function (result) {
                 if (result) {
                     if (result.filePath) {
