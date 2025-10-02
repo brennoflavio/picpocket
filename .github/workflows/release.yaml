@@ -8,31 +8,18 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image: [ci-20.04-amd64, ci-ut24.04-1.x-amd64]
-    env:
-      MAPPINGS: |
-        {
-          "ci-20.04-amd64": "ubuntu-sdk-20.04",
-          "ci-ut24.04-1.x-amd64": "ubuntu-touch-24.04-1.x"
-        }
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Pull Clickable
         run: |
-          docker pull clickable/${{ matrix.image }}:latest
+          docker pull clickable/ci-ut24.04-1.x-amd64:latest
 
       - name: Build
         run: |
-          docker run --env CLICKABLE_FRAMEWORK=${{ env.CLICKABLE_FRAMEWORK }} --volume ./:/app clickable/${{ matrix.image }}:latest bash -c "cd /app && clickable build"
-        env:
-          CLICKABLE_FRAMEWORK: ${{ fromJSON(env.MAPPINGS)[matrix.image] }}
+          docker run --env CLICKABLE_FRAMEWORK=ubuntu-touch-24.04-1.x --volume ./:/app clickable/ci-ut24.04-1.x-amd64:latest bash -c "cd /app && clickable build"
 
       - name: Deploy
         run: |
-          docker run --env CLICKABLE_FRAMEWORK=${{ env.CLICKABLE_FRAMEWORK }} --env OPENSTORE_API_KEY="${{ secrets.OPENSTORE_API_KEY }}" --volume ./:/app clickable/${{ matrix.image }}:latest bash -c "cd /app && clickable publish -- '${{ github.event.head_commit.message }}'"
-        env:
-          CLICKABLE_FRAMEWORK: ${{ fromJSON(env.MAPPINGS)[matrix.image] }}
+          docker run --env CLICKABLE_FRAMEWORK=ubuntu-touch-24.04-1.x --env OPENSTORE_API_KEY="${{ secrets.OPENSTORE_API_KEY }}" --volume ./:/app clickable/ci-ut24.04-1.x-amd64:latest bash -c "cd /app && clickable publish -- '${{ github.event.head_commit.message }}'"

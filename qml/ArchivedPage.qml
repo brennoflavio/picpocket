@@ -163,6 +163,30 @@ Page {
                     });
             }
         }
+
+        IconButton {
+            iconName: "delete"
+            text: i18n.tr("Trash")
+            enabled: archivedPage.selectedImages.length > 0 && !loadingToast.showing
+            opacity: enabled ? 1.0 : 0.5
+            visible: gallery.selectionMode
+            onClicked: {
+                loadingToast.showing = true;
+                loadingToast.message = i18n.tr("Trashing photos...");
+                var imageIds = [];
+                for (var i = 0; i < archivedPage.selectedImages.length; i++) {
+                    if (archivedPage.selectedImages[i].id) {
+                        imageIds.push(archivedPage.selectedImages[i].id);
+                    }
+                }
+                python.call('immich_client.delete', imageIds, function (result) {
+                        gallery.exitSelectionMode();
+                        python.call('immich_client.clear_cache', [], function () {
+                                loadTimeline("");
+                            });
+                    });
+            }
+        }
     }
 
     LoadToast {
