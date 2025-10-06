@@ -138,6 +138,14 @@ def base_timeline(prefix: str, bucket: str = "", query_args: Dict[str, str] = {}
 
         bucket_obj = get_bucket(url, token, bucket, query_args)
 
+        if not bucket_obj.current:
+            return TimelineResponse(
+                title=datetime.now().strftime("%B, %d, %Y"),
+                images=[],
+                previous=bucket_obj.previous,
+                next=bucket_obj.next,
+            )
+
         response = http.get(
             url=urljoin(url, "/api/timeline/bucket"),
             headers={"Authorization": f"Bearer {token}"},
