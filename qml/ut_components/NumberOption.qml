@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief NumberOption - A numeric input field component with labels for Ubuntu Touch
@@ -65,38 +65,30 @@ import Lomiri.Components 1.3
 Item {
     id: numberOption
 
-    /*! The main label displayed on the left side */
+    //! The main label displayed on the left side
     property string title: ""
-
-    /*! Optional secondary text displayed below the title */
+    //! Optional secondary text displayed below the title
     property string subtitle: ""
-
-    /*! The current numeric value */
+    //! The current numeric value
     property int value: 0
-
-    /*! The minimum allowed value (supports negative numbers) */
+    //! The minimum allowed value (supports negative numbers)
     property int minimumValue: 0
-
-    /*! The maximum allowed value */
+    //! The maximum allowed value
     property int maximumValue: 999999
-
-    /*! Optional suffix text displayed after the value (e.g., "km", "%", "°C") */
+    //! Optional suffix text displayed after the value (e.g., "km", "%", "°C")
     property string suffix: ""
-
-    /*! Whether the input field is editable */
+    //! Whether the input field is editable
     property alias enabled: textField.enabled
+    //! Whether the current value is valid (for form validation) Do not manipulate this variable directly, use minimumValue/maximumValue instead.
+    property bool isValid: !hasValidationError
+    //! \internal
+    property bool hasValidationError: false
 
     /*!
      * Emitted when the value changes and passes validation
      * \param newValue The new validated numeric value
      */
     signal valueUpdated(int newValue)
-
-    /*! Whether the current value is valid (for form validation) Do not manipulate this variable directly, use minimumValue/maximumValue instead. */
-    property bool isValid: !hasValidationError
-
-    /*! \internal */
-    property bool hasValidationError: false
 
     height: units.gu(8)
     width: parent.width
@@ -107,6 +99,8 @@ Item {
     }
 
     Column {
+        spacing: units.gu(0.5)
+
         anchors {
             left: parent.left
             right: textField.left
@@ -114,10 +108,10 @@ Item {
             leftMargin: units.gu(2)
             rightMargin: units.gu(2)
         }
-        spacing: units.gu(0.5)
 
         Label {
             id: titleLabel
+
             text: numberOption.title
             fontSize: "medium"
             color: theme.palette.normal.foregroundText
@@ -127,6 +121,7 @@ Item {
 
         Label {
             id: subtitleLabel
+
             text: numberOption.subtitle
             fontSize: "small"
             color: theme.palette.normal.backgroundSecondaryText
@@ -134,35 +129,27 @@ Item {
             elide: Text.ElideRight
             visible: text !== ""
         }
+
     }
 
     TextField {
         id: textField
-        anchors {
-            right: parent.right
-            verticalCenter: parent.verticalCenter
-            rightMargin: units.gu(2)
-        }
+
         width: units.gu(12)
         text: numberOption.value + (numberOption.suffix ? " " + numberOption.suffix : "")
         inputMethodHints: Qt.ImhFormattedNumbersOnly
-        validator: IntValidator {
-            bottom: numberOption.minimumValue
-            top: numberOption.maximumValue
-        }
         horizontalAlignment: TextInput.AlignRight
         color: numberOption.hasValidationError ? theme.palette.normal.negative : theme.palette.normal.foregroundText
-
         onTextChanged: {
             var cleanText = text.replace(numberOption.suffix, '').trim();
             var isNegative = cleanText.indexOf('-') === 0;
             var digitsOnly = cleanText.replace(/[^0-9]/g, '');
-            if (digitsOnly === '' && cleanText !== '-') {
-                return;
-            }
-            if (cleanText === '-' && numberOption.minimumValue < 0) {
-                return;
-            }
+            if (digitsOnly === '' && cleanText !== '-')
+                return ;
+
+            if (cleanText === '-' && numberOption.minimumValue < 0)
+                return ;
+
             var numericValue = parseInt((isNegative ? '-' : '') + digitsOnly) || 0;
             if (!isNaN(numericValue) && numericValue !== numberOption.value) {
                 if (numericValue >= numberOption.minimumValue && numericValue <= numberOption.maximumValue) {
@@ -174,7 +161,6 @@ Item {
                 }
             }
         }
-
         onFocusChanged: {
             if (!focus) {
                 numberOption.hasValidationError = false;
@@ -183,30 +169,48 @@ Item {
                 text = numberOption.value.toString();
             }
         }
+
+        anchors {
+            right: parent.right
+            verticalCenter: parent.verticalCenter
+            rightMargin: units.gu(2)
+        }
+
+        validator: IntValidator {
+            bottom: numberOption.minimumValue
+            top: numberOption.maximumValue
+        }
+
     }
 
     Label {
         id: validationLabel
+
+        text: "Value must be between " + numberOption.minimumValue + " and " + numberOption.maximumValue
+        fontSize: "x-small"
+        color: theme.palette.normal.negative
+        visible: numberOption.hasValidationError
+
         anchors {
             top: textField.bottom
             right: parent.right
             rightMargin: units.gu(2)
             topMargin: units.gu(0.5)
         }
-        text: "Value must be between " + numberOption.minimumValue + " and " + numberOption.maximumValue
-        fontSize: "x-small"
-        color: theme.palette.normal.negative
-        visible: numberOption.hasValidationError
+
     }
 
     Rectangle {
+        height: units.dp(1)
+        color: theme.palette.normal.base
+
         anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
             leftMargin: units.gu(2)
         }
-        height: units.dp(1)
-        color: theme.palette.normal.base
+
     }
+
 }

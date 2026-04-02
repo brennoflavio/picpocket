@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
 
 /*!
@@ -73,7 +73,7 @@ Rectangle {
     property alias iconColor: buttonIcon.color
     property bool enabled: true
 
-    signal clicked
+    signal clicked()
 
     implicitWidth: units.gu(30)
     implicitHeight: units.gu(6)
@@ -81,14 +81,14 @@ Rectangle {
     height: units.gu(6)
     color: theme.palette.normal.positive
     radius: units.gu(3)
-    opacity: enabled ? 1.0 : 0.5
+    opacity: enabled ? 1 : 0.5
 
     MouseArea {
         anchors.fill: parent
         enabled: actionButton.enabled
         onClicked: actionButton.clicked()
         onPressed: actionButton.opacity = enabled ? 0.8 : 0.5
-        onReleased: actionButton.opacity = enabled ? 1.0 : 0.5
+        onReleased: actionButton.opacity = enabled ? 1 : 0.5
     }
 
     RowLayout {
@@ -97,6 +97,7 @@ Rectangle {
 
         Icon {
             id: buttonIcon
+
             name: actionButton.iconName
             width: units.gu(2.5)
             height: units.gu(2.5)
@@ -106,17 +107,21 @@ Rectangle {
 
         Label {
             id: buttonText
+
             text: actionButton.text
             fontSize: "medium"
             font.weight: Font.Medium
             color: "white"
             Layout.alignment: Qt.AlignVCenter
         }
+
     }
 
-    Behavior on opacity  {
+    Behavior on opacity {
         NumberAnimation {
             duration: 100
         }
+
     }
+
 }

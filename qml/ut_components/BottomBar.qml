@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief BottomBar - A bottom navigation bar component for Ubuntu Touch applications
@@ -65,12 +65,10 @@ import Lomiri.Components 1.3
 Rectangle {
     id: bottomBar
 
-    /*! Optional button component to display on the left side */
+    //! Optional button component to display on the left side
     property Item leftButton: null
-
-    /*! Optional button component to display on the right side */
+    //! Optional button component to display on the right side
     property Item rightButton: null
-
     /*!
      * Child items placed in the center row
      * This is the default property, so buttons can be added as direct children
@@ -81,13 +79,15 @@ Rectangle {
     color: theme.palette.normal.background
 
     Rectangle {
+        height: units.dp(1)
+        color: theme.palette.normal.base
+
         anchors {
             left: parent.left
             right: parent.right
             top: parent.top
         }
-        height: units.dp(1)
-        color: theme.palette.normal.base
+
     }
 
     Item {
@@ -96,42 +96,49 @@ Rectangle {
 
         Item {
             id: leftButtonContainer
-            anchors {
-                left: parent.left
-                verticalCenter: parent.verticalCenter
-            }
+
             width: leftButton ? leftButton.width : 0
             height: leftButton ? leftButton.height : 0
-
             Component.onCompleted: {
                 if (leftButton) {
                     leftButton.parent = leftButtonContainer;
                     leftButton.anchors.centerIn = leftButtonContainer;
                 }
             }
+
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+
         }
 
         Row {
             id: middleButtonsRow
+
             anchors.centerIn: parent
             spacing: units.gu(2)
         }
 
         Item {
             id: rightButtonContainer
-            anchors {
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-            }
+
             width: rightButton ? rightButton.width : 0
             height: rightButton ? rightButton.height : 0
-
             Component.onCompleted: {
                 if (rightButton) {
                     rightButton.parent = rightButtonContainer;
                     rightButton.anchors.centerIn = rightButtonContainer;
                 }
             }
+
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+
         }
+
     }
+
 }

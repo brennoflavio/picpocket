@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
 
 /*!
@@ -86,35 +86,28 @@ Column {
      * Optional properties: subtitle, icon, customActions, actionData
      */
     property var items: []
-
-    /*! Whether to show the search bar above the list */
+    //! Whether to show the search bar above the list
     property bool showSearchBar: false
-
-    /*! Placeholder text for the search input field */
+    //! Placeholder text for the search input field
     property string searchPlaceholder: i18n.tr("Search")
-
-    /*! Message displayed when the list is empty or no items match the search */
+    //! Message displayed when the list is empty or no items match the search
     property string emptyMessage: i18n.tr("No items")
-
     /*!
      * Array of property names to search within.
      * Default: ["title"] - searches only in the title field
      * Can be extended to search multiple fields: ["title", "subtitle", "description"]
      */
     property var searchFields: ["title"]
-
     /*!
      * Global actions applied to all items (unless overridden by item.customActions).
      * Each action object should have: id, iconName, text (optional), enabled (optional), visible (optional)
      */
     property var itemActions: []
-
-    /*! Property name used as unique identifier for items (used internally) */
+    //! Property name used as unique identifier for items (used internally)
     property string idField: "id"
 
-    /*! Emitted when a list item is clicked (only if the item has no actions) */
+    //! Emitted when a list item is clicked (only if the item has no actions)
     signal itemClicked(var item)
-
     /*!
      * Emitted when an action button is triggered.
      * @param actionId The id of the triggered action
@@ -132,12 +125,13 @@ Column {
         height: visible ? units.gu(5) : 0
 
         Row {
+            spacing: units.gu(1)
+
             anchors {
                 fill: parent
                 leftMargin: units.gu(2)
                 rightMargin: units.gu(2)
             }
-            spacing: units.gu(1)
 
             Icon {
                 anchors.verticalCenter: parent.verticalCenter
@@ -149,38 +143,49 @@ Column {
 
             TextField {
                 id: searchInput
+
                 width: parent.width - units.gu(5)
                 anchors.verticalCenter: parent.verticalCenter
                 placeholderText: actionableList.searchPlaceholder
             }
+
         }
+
     }
 
     ListView {
         id: listView
+
         width: parent.width
         height: parent.height - (showSearchBar ? units.gu(6) : 0)
         spacing: 0
         clip: true
-
         model: {
             var filtered = items;
             if (showSearchBar && searchInput.text.length > 0) {
                 var searchText = searchInput.text.toLowerCase();
-                filtered = filtered.filter(function (item) {
-                        for (var i = 0; i < searchFields.length; i++) {
-                            var fieldName = searchFields[i];
-                            if (item.hasOwnProperty(fieldName)) {
-                                var fieldValue = String(item[fieldName] || "").toLowerCase();
-                                if (fieldValue.indexOf(searchText) !== -1) {
-                                    return true;
-                                }
-                            }
+                filtered = filtered.filter(function(item) {
+                    for (var i = 0; i < searchFields.length; i++) {
+                        var fieldName = searchFields[i];
+                        if (item.hasOwnProperty(fieldName)) {
+                            var fieldValue = String(item[fieldName] || "").toLowerCase();
+                            if (fieldValue.indexOf(searchText) !== -1)
+                                return true;
+
                         }
-                        return false;
-                    });
+                    }
+                    return false;
+                });
             }
             return filtered;
+        }
+
+        Label {
+            visible: listView.model.length === 0
+            anchors.centerIn: parent
+            text: actionableList.emptyMessage
+            fontSize: "large"
+            color: theme.palette.normal.backgroundSecondaryText
         }
 
         delegate: Item {
@@ -192,7 +197,7 @@ Column {
             property string leadingIcon: modelData.icon || ""
             property var actions: modelData.customActions && modelData.customActions.length > 0 ? modelData.customActions : actionableList.itemActions
 
-            width: parent.width
+            width: parent ? parent.width : 0
             height: units.gu(7)
 
             Rectangle {
@@ -200,12 +205,13 @@ Column {
                 color: itemMouseArea.pressed ? theme.palette.highlighted.background : "transparent"
 
                 RowLayout {
+                    spacing: units.gu(1)
+
                     anchors {
                         fill: parent
                         leftMargin: units.gu(1.5)
                         rightMargin: units.gu(0.5)
                     }
-                    spacing: units.gu(1)
 
                     Loader {
                         active: listItemDelegate.leadingIcon !== ""
@@ -219,6 +225,7 @@ Column {
                             height: units.gu(3)
                             color: theme.palette.normal.foregroundText
                         }
+
                     }
 
                     Column {
@@ -237,6 +244,7 @@ Column {
                         Loader {
                             active: listItemDelegate.subtitle !== ""
                             width: parent.width
+
                             sourceComponent: Label {
                                 text: listItemDelegate.subtitle
                                 fontSize: "small"
@@ -244,11 +252,14 @@ Column {
                                 elide: Text.ElideRight
                                 width: parent.width
                             }
+
                         }
+
                     }
 
                     Row {
                         id: actionsRow
+
                         spacing: units.gu(0.2)
                         Layout.alignment: Qt.AlignVCenter
 
@@ -257,9 +268,9 @@ Column {
                                 var visibleActions = [];
                                 for (var i = 0; i < listItemDelegate.actions.length; i++) {
                                     var action = listItemDelegate.actions[i];
-                                    if (action.visible === undefined || action.visible === true) {
+                                    if (action.visible === undefined || action.visible === true)
                                         visibleActions.push(action);
-                                    }
+
                                 }
                                 return visibleActions;
                             }
@@ -269,43 +280,45 @@ Column {
                                 text: modelData.text || ""
                                 enabled: modelData.enabled === undefined || modelData.enabled === true
                                 onClicked: {
-                                    if (modelData.handler && typeof modelData.handler === "function") {
+                                    if (modelData.handler && typeof modelData.handler === "function")
                                         modelData.handler(listItemDelegate.itemData, modelData.id);
-                                    } else {
-                                        actionableList.actionTriggered(modelData.id, listItemDelegate.itemData, listItemDelegate.itemData.actionData || {});
-                                    }
+                                    else
+                                        actionableList.actionTriggered(modelData.id, listItemDelegate.itemData, listItemDelegate.itemData.actionData || {
+                                    });
                                 }
                             }
+
                         }
+
                     }
+
                 }
 
                 MouseArea {
                     id: itemMouseArea
+
                     anchors.fill: parent
                     enabled: actionsRow.children.length === 0
                     onClicked: actionableList.itemClicked(listItemDelegate.itemData)
                 }
 
                 Rectangle {
+                    height: units.dp(1)
+                    color: theme.palette.normal.base
+
                     anchors {
                         left: parent.left
                         right: parent.right
                         bottom: parent.bottom
                         leftMargin: units.gu(1.5)
                     }
-                    height: units.dp(1)
-                    color: theme.palette.normal.base
+
                 }
+
             }
+
         }
 
-        Label {
-            visible: listView.model.length === 0
-            anchors.centerIn: parent
-            text: actionableList.emptyMessage
-            fontSize: "large"
-            color: theme.palette.normal.backgroundSecondaryText
-        }
     }
+
 }

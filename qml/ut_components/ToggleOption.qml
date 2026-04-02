@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief ToggleOption - A list item component with a toggle switch for settings
@@ -72,16 +72,13 @@ import Lomiri.Components 1.3
 Item {
     id: toggleOption
 
-    /*! The main text label displayed for this toggle option */
+    //! The main text label displayed for this toggle option
     property string title: ""
-
-    /*! Optional secondary text displayed below the title. Hidden when empty */
+    //! Optional secondary text displayed below the title. Hidden when empty
     property string subtitle: ""
-
-    /*! The current state of the toggle switch (true = on, false = off) */
+    //! The current state of the toggle switch (true = on, false = off)
     property bool checked: false
-
-    /*! Whether the toggle switch is interactive. When false, the switch appears grayed out */
+    //! Whether the toggle switch is interactive. When false, the switch appears grayed out
     property alias enabled: toggle.enabled
 
     /*!
@@ -99,6 +96,8 @@ Item {
     }
 
     Column {
+        spacing: units.gu(0.5)
+
         anchors {
             left: parent.left
             right: toggle.left
@@ -106,10 +105,10 @@ Item {
             leftMargin: units.gu(2)
             rightMargin: units.gu(2)
         }
-        spacing: units.gu(0.5)
 
         Label {
             id: titleLabel
+
             text: toggleOption.title
             fontSize: "medium"
             color: theme.palette.normal.foregroundText
@@ -119,6 +118,7 @@ Item {
 
         Label {
             id: subtitleLabel
+
             text: toggleOption.subtitle
             fontSize: "small"
             color: theme.palette.normal.backgroundSecondaryText
@@ -126,30 +126,37 @@ Item {
             elide: Text.ElideRight
             visible: text !== ""
         }
+
     }
 
     Switch {
         id: toggle
-        anchors {
-            right: parent.right
-            verticalCenter: parent.verticalCenter
-            rightMargin: units.gu(2)
-        }
+
         checked: toggleOption.checked
         onClicked: {
             toggleOption.checked = checked;
             toggleOption.toggled(checked);
         }
+
+        anchors {
+            right: parent.right
+            verticalCenter: parent.verticalCenter
+            rightMargin: units.gu(2)
+        }
+
     }
 
     Rectangle {
+        height: units.dp(1)
+        color: theme.palette.normal.base
+
         anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
             leftMargin: units.gu(2)
         }
-        height: units.dp(1)
-        color: theme.palette.normal.base
+
     }
+
 }

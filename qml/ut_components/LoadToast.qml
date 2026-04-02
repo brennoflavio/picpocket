@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief LoadToast - A full-screen loading overlay component for Ubuntu Touch applications
@@ -60,41 +60,36 @@ Item {
     anchors.fill: parent
     z: 1000
     state: showing ? "visible" : "hidden"
-
     states: [
         State {
             name: "visible"
+
             PropertyChanges {
                 target: toast
-                opacity: 1.0
+                opacity: 1
             }
+
             PropertyChanges {
                 target: toast
                 visible: true
             }
+
         },
         State {
             name: "hidden"
+
             PropertyChanges {
                 target: toast
-                opacity: 0.0
+                opacity: 0
             }
+
             PropertyChanges {
                 target: toast
                 visible: false
             }
+
         }
     ]
-
-    transitions: Transition {
-        from: "*"
-        to: "*"
-        NumberAnimation {
-            properties: "opacity"
-            duration: 200
-            easing.type: Easing.InOutQuad
-        }
-    }
 
     MouseArea {
         anchors.fill: parent
@@ -110,6 +105,7 @@ Item {
 
     Rectangle {
         id: toastContainer
+
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.8, units.gu(40))
         height: contentColumn.height + units.gu(4)
@@ -119,20 +115,24 @@ Item {
 
         Column {
             id: contentColumn
+
+            spacing: units.gu(2)
+
             anchors {
                 centerIn: parent
                 margins: units.gu(2)
             }
-            spacing: units.gu(2)
 
-            ActivityIndicator {
+            LoadingSpinner {
                 id: spinner
+
                 anchors.horizontalCenter: parent.horizontalCenter
                 running: toast.showing
             }
 
             Label {
                 id: messageLabel
+
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: toast.message
                 wrapMode: Text.WordWrap
@@ -140,6 +140,21 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 visible: toast.message !== ""
             }
+
         }
+
     }
+
+    transitions: Transition {
+        from: "*"
+        to: "*"
+
+        NumberAnimation {
+            properties: "opacity"
+            duration: 200
+            easing.type: Easing.InOutQuad
+        }
+
+    }
+
 }

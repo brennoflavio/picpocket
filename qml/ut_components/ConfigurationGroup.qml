@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief ConfigurationGroup - A titled container for related configuration controls
@@ -103,11 +103,11 @@ import Lomiri.Components 1.3
 Item {
     id: configurationGroup
 
-    /*! Title text shown in the section header */
+    //! Title text shown in the section header
     property string title: ""
-    /*! Direct access to child items inside the group (useful for iteration) */
+    //! Direct access to child items inside the group (useful for iteration)
     property alias children: contentColumn.children
-    /*! Default property: place controls inside the group without extra wrappers */
+    //! Default property: place controls inside the group without extra wrappers
     default property alias content: contentColumn.data
 
     width: parent.width
@@ -115,35 +115,45 @@ Item {
 
     Item {
         id: headerItem
+
+        height: titleLabel.height + units.gu(2)
+
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
             topMargin: units.gu(2)
         }
-        height: titleLabel.height + units.gu(2)
 
         Label {
             id: titleLabel
+
+            text: configurationGroup.title
+            fontSize: "medium"
+            font.weight: Font.DemiBold
+            color: theme.palette.normal.backgroundSecondaryText
+
             anchors {
                 left: parent.left
                 leftMargin: units.gu(2)
                 verticalCenter: parent.verticalCenter
             }
-            text: configurationGroup.title
-            fontSize: "medium"
-            font.weight: Font.DemiBold
-            color: theme.palette.normal.backgroundSecondaryText
+
         }
+
     }
 
     Column {
         id: contentColumn
+
+        spacing: units.gu(0)
+
         anchors {
             top: headerItem.bottom
             left: parent.left
             right: parent.right
         }
-        spacing: units.gu(0)
+
     }
+
 }

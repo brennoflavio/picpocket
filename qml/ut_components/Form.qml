@@ -1,3 +1,5 @@
+import "."
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,9 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
-import "."
 
 /*!
  * \brief Form - Declarative form container with submit action
@@ -61,44 +61,43 @@ import "."
 Item {
     id: form
 
-    /*! Default property used to declare child fields within the form */
+    //! Default property used to declare child fields within the form
     default property alias fields: fieldsContainer.children
-
-    /*! Text label displayed on the submit button */
+    //! Text label displayed on the submit button
     property string buttonText: i18n.tr("Submit")
-
-    /*! Icon name applied to the submit button; leave empty for no icon */
+    //! Icon name applied to the submit button; leave empty for no icon
     property string buttonIconName: ""
-
-    /*! Consolidated validity state evaluated from child fields providing `isValid` */
+    //! Consolidated validity state evaluated from child fields providing `isValid`
     property bool allFieldsValid: {
         for (var i = 0; i < fieldsContainer.children.length; i++) {
             var field = fieldsContainer.children[i];
-            if (field.hasOwnProperty('isValid') && !field.isValid) {
+            if (field.hasOwnProperty('isValid') && !field.isValid)
                 return false;
-            }
+
         }
         return true;
     }
 
-    /*! Emitted when the submit button is pressed and all fields are valid */
-    signal submitted
+    //! Emitted when the submit button is pressed and all fields are valid
+    signal submitted()
 
     width: parent.width
     height: childrenRect.height
 
     ColumnLayout {
+        height: implicitHeight
+        spacing: units.gu(1)
+
         anchors {
             left: parent.left
             right: parent.right
             top: parent.top
             margins: units.gu(2)
         }
-        height: implicitHeight
-        spacing: units.gu(1)
 
         Column {
             id: fieldsContainer
+
             Layout.fillWidth: true
             width: parent.width
             spacing: units.gu(1)
@@ -106,6 +105,7 @@ Item {
 
         ActionButton {
             id: submitButton
+
             readonly property real calculatedWidth: Math.min(form.width - units.gu(4), units.gu(30))
 
             Layout.alignment: Qt.AlignHCenter
@@ -114,15 +114,16 @@ Item {
             Layout.minimumWidth: calculatedWidth
             Layout.maximumWidth: calculatedWidth
             Layout.preferredHeight: implicitHeight
-
             width: calculatedWidth
             text: form.buttonText
             iconName: form.buttonIconName
             enabled: form.allFieldsValid
-
             onClicked: {
+                Qt.inputMethod.commit();
                 form.submitted();
             }
         }
+
     }
+
 }

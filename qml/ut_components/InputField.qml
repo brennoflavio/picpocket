@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
 
 /*!
@@ -64,21 +64,17 @@ import QtQuick.Layouts 1.3
 Item {
     id: inputField
 
-    /*! The label text displayed above the input field */
+    //! The label text displayed above the input field
     property string title: ""
-
-    /*! Placeholder text shown when the field is empty */
+    //! Placeholder text shown when the field is empty
     property string placeholder: ""
-
-    /*! The current text value in the input field (read/write) */
+    //! The current text value in the input field (read/write)
     property alias text: textField.text
-
     /*!
      * The echo mode for the text field
      * Possible values: TextInput.Normal, TextInput.Password, TextInput.NoEcho, TextInput.PasswordEchoOnEdit
      */
     property alias echoMode: textField.echoMode
-
     /*!
      * Regular expression pattern for input validation
      * Leave empty to disable regex validation
@@ -88,27 +84,28 @@ Item {
      * - ZIP: "^\\d{5}(-\\d{4})?$"
      */
     property string validationRegex: ""
-
     /*!
      * Custom error message shown when validation fails
      * For required fields, a default "This field is required" message is shown when empty
      */
     property string errorMessage: i18n.tr("Invalid input")
-
     /*!
      * Whether this field is required (must not be empty)
      * When true, the field will show an error if left empty after losing focus
      */
     property bool required: false
-
-    /*! Whether the current input is valid (for form validation). Do not manipulate this variable directly, use validationRegex instead. */
+    //! Whether the current input is valid (for form validation). Do not manipulate this variable directly, use validationRegex instead.
     property alias isValid: internal.isValid
 
     width: parent.width
     height: units.gu(12)
+    onTextChanged: {
+        internal.validate();
+    }
 
     QtObject {
         id: internal
+
         property bool isValid: (required || validationRegex) ? false : true
         property bool showError: false
 
@@ -128,18 +125,15 @@ Item {
             showError = !isValid && text.length > 0;
             return isValid;
         }
-    }
 
-    onTextChanged: {
-        internal.validate();
     }
 
     Connections {
         target: textField
         onFocusChanged: {
-            if (!textField.focus) {
+            if (!textField.focus)
                 internal.validate();
-            }
+
         }
     }
 
@@ -150,6 +144,7 @@ Item {
 
         Label {
             id: titleLabel
+
             text: inputField.title
             fontSize: "small"
             color: theme.palette.normal.backgroundText
@@ -158,6 +153,7 @@ Item {
 
         TextField {
             id: textField
+
             placeholderText: inputField.placeholder
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -166,11 +162,14 @@ Item {
 
         Label {
             id: errorLabel
+
             text: required && textField.text.trim().length === 0 ? i18n.tr("This field is required") : errorMessage
             fontSize: "x-small"
             color: theme.palette.normal.negative
             visible: internal.showError
             Layout.fillWidth: true
         }
+
     }
+
 }

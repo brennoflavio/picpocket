@@ -1,3 +1,4 @@
+import Lomiri.Components 1.3
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 
 /*!
  * \brief AppHeader - A simplified page header component for Ubuntu Touch applications
@@ -49,27 +49,24 @@ import Lomiri.Components 1.3
 PageHeader {
     id: appHeader
 
-    /*! The title text displayed in the header */
+    //! The title text displayed in the header
     property string pageTitle: ""
-
     /*!
      * Determines the header style:
      * - true: Root page style with app icon (no back navigation)
      * - false: Sub-page style with back button
      */
     property bool isRootPage: true
-
     /*!
      * Icon name to display on root pages (only used when isRootPage is true)
      * Leave empty to hide the leading icon on root pages
      */
     property string appIconName: ""
-
-    /*! Whether to show a settings button in the trailing position */
+    //! Whether to show a settings button in the trailing position
     property bool showSettingsButton: false
 
-    /*! Emitted when the settings button is clicked */
-    signal settingsClicked
+    //! Emitted when the settings button is clicked
+    signal settingsClicked()
 
     title: pageTitle
 
@@ -81,9 +78,9 @@ PageHeader {
                 text: isRootPage ? "" : i18n.tr("Back")
                 enabled: !isRootPage
                 onTriggered: {
-                    if (!isRootPage && pageStack) {
+                    if (!isRootPage && pageStack)
                         pageStack.pop();
-                    }
+
                 }
             }
         ]
@@ -99,4 +96,5 @@ PageHeader {
             }
         ]
     }
+
 }

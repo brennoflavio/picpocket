@@ -1,3 +1,5 @@
+import Lomiri.Components 1.3
+import QtGraphicalEffects 1.0
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -14,9 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
 
 /*!
  * \brief CardList - A filterable list view component that displays items as cards
@@ -72,6 +72,7 @@ Column {
     property string emptyMessage: i18n.tr("No items")
     property bool showSearchBar: false
     property string searchPlaceholder: i18n.tr("Search")
+
     signal itemClicked(var item)
 
     width: parent.width
@@ -83,12 +84,13 @@ Column {
         height: visible ? units.gu(5) : 0
 
         Row {
+            spacing: units.gu(1)
+
             anchors {
                 fill: parent
                 leftMargin: units.gu(2)
                 rightMargin: units.gu(2)
             }
-            spacing: units.gu(1)
 
             Icon {
                 anchors.verticalCenter: parent.verticalCenter
@@ -100,11 +102,14 @@ Column {
 
             TextField {
                 id: searchInput
+
                 width: parent.width - units.gu(5)
                 anchors.verticalCenter: parent.verticalCenter
                 placeholderText: cardList.searchPlaceholder
             }
+
         }
+
     }
 
     Item {
@@ -113,29 +118,31 @@ Column {
 
         ListView {
             id: listView
+
             anchors.fill: parent
             spacing: units.gu(1)
             clip: true
-
             model: {
                 var filtered = items;
-                if (showSearchBar && searchInput.text.length > 0) {
-                    filtered = filtered.filter(function (item) {
-                            var searchValue = item.title || "";
-                            return searchValue.toLowerCase().indexOf(searchInput.text.toLowerCase()) !== -1;
-                        });
-                }
+                if (showSearchBar && searchInput.text.length > 0)
+                    filtered = filtered.filter(function(item) {
+                    var searchValue = item.title || "";
+                    return searchValue.toLowerCase().indexOf(searchInput.text.toLowerCase()) !== -1;
+                });
+
                 return filtered;
             }
 
             delegate: Item {
                 id: cardDelegate
+
                 width: parent.width - units.gu(4)
                 height: units.gu(10)
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Rectangle {
                     id: background
+
                     anchors.fill: parent
                     color: "transparent"
                     radius: units.gu(1)
@@ -144,8 +151,8 @@ Column {
                         anchors.fill: parent
                         onClicked: cardList.itemClicked(modelData)
                         onPressed: background.opacity = 0.7
-                        onReleased: background.opacity = 1.0
-                        onCanceled: background.opacity = 1.0
+                        onReleased: background.opacity = 1
+                        onCanceled: background.opacity = 1
                     }
 
                     RowLayout {
@@ -155,6 +162,7 @@ Column {
 
                         Rectangle {
                             id: thumbnailContainer
+
                             width: units.gu(8)
                             height: units.gu(8)
                             radius: units.gu(1)
@@ -163,6 +171,7 @@ Column {
 
                             Image {
                                 id: thumbnail
+
                                 anchors.fill: parent
                                 source: modelData.thumbnailSource || ""
                                 fillMode: Image.PreserveAspectCrop
@@ -171,6 +180,7 @@ Column {
 
                             Rectangle {
                                 id: mask
+
                                 anchors.fill: parent
                                 radius: units.gu(1)
                                 visible: false
@@ -191,6 +201,7 @@ Column {
                                 color: theme.palette.normal.backgroundSecondaryText
                                 visible: (!!modelData.icon) || (!modelData.thumbnailSource && !modelData.icon)
                             }
+
                         }
 
                         Column {
@@ -214,10 +225,15 @@ Column {
                                 width: parent.width
                                 visible: text !== ""
                             }
+
                         }
+
                     }
+
                 }
+
             }
+
         }
 
         Label {
@@ -227,5 +243,7 @@ Column {
             fontSize: "large"
             color: theme.palette.normal.backgroundSecondaryText
         }
+
     }
+
 }
