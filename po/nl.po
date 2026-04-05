@@ -8,62 +8,64 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-04-06 16:54+0000\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/ubports/picpocket/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.17-dev\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
-msgstr ""
+msgstr "Album"
 
 #: ../qml/AlbumDetailPage.qml:50
 msgid "Loading album photos..."
-msgstr ""
+msgstr "Bezig met laden van foto's…"
 
 #: ../qml/AlbumDetailPage.qml:84
 msgid "Error loading album"
-msgstr ""
+msgstr "Het album kan niet worden geladen"
 
 #: ../qml/AlbumDetailPage.qml:127
 msgid "Delete Album"
-msgstr ""
+msgstr "Album verwijderen"
 
 #: ../qml/AlbumDetailPage.qml:133
 msgid "Deleting album..."
-msgstr ""
+msgstr "Bezig met verwijderen…"
 
 #: ../qml/AlbumDetailPage.qml:144 ../qml/AlbumsPage.qml:155
 #: ../qml/ArchivedPage.qml:132 ../qml/DeletedPhotosPage.qml:132
 #: ../qml/FavoritesPage.qml:132 ../qml/GalleryPage.qml:207
 #: ../qml/LocationsPage.qml:86 ../qml/PeoplePage.qml:86
 msgid "Refresh"
-msgstr ""
+msgstr "Herladen"
 
 #: ../qml/AlbumDetailPage.qml:157
 msgid "Remove from Album"
-msgstr ""
+msgstr "Verwijderen uit album"
 
 #: ../qml/AlbumDetailPage.qml:163
 msgid "Removing from album..."
-msgstr ""
+msgstr "Bezig met verwijderen uit album…"
 
 #: ../qml/AlbumDetailPage.qml:181 ../qml/FavoritesPage.qml:164
 #: ../qml/GalleryPage.qml:239 ../qml/LocationDetailPage.qml:143
 #: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:408
 #: ../qml/SearchPage.qml:227
 msgid "Archive"
-msgstr ""
+msgstr "Archiveren"
 
 #: ../qml/AlbumDetailPage.qml:187 ../qml/FavoritesPage.qml:170
 #: ../qml/GalleryPage.qml:245 ../qml/LocationDetailPage.qml:149
 #: ../qml/PersonDetailPage.qml:162 ../qml/SearchPage.qml:233
 msgid "Archiving photos..."
-msgstr ""
+msgstr "Bezig met archiveren…"
 
 #: ../qml/AlbumDetailPage.qml:205 ../qml/ArchivedPage.qml:169
 #: ../qml/FavoritesPage.qml:188 ../qml/GalleryPage.qml:263
@@ -71,402 +73,402 @@ msgstr ""
 #: ../qml/LocationDetailPage.qml:167 ../qml/PersonDetailPage.qml:180
 #: ../qml/PhotoDetail.qml:422 ../qml/SearchPage.qml:251
 msgid "Trash"
-msgstr ""
+msgstr "Naar prullenbak"
 
 #: ../qml/AlbumDetailPage.qml:211 ../qml/ArchivedPage.qml:175
 #: ../qml/FavoritesPage.qml:194 ../qml/GalleryPage.qml:269
 #: ../qml/LocationDetailPage.qml:173 ../qml/PersonDetailPage.qml:186
 #: ../qml/SearchPage.qml:257
 msgid "Trashing photos..."
-msgstr ""
+msgstr "Bezig met verplaatsen naar prullenbak…"
 
 #: ../qml/AlbumSelectorPage.qml:38 ../qml/AlbumsPage.qml:41
 msgid "item"
-msgstr ""
+msgstr "item"
 
 #: ../qml/AlbumSelectorPage.qml:38 ../qml/AlbumsPage.qml:41
 msgid "items"
-msgstr ""
+msgstr "items"
 
 #: ../qml/AlbumSelectorPage.qml:40 ../qml/AlbumsPage.qml:43
 msgid "Shared"
-msgstr ""
+msgstr "Gedeeld"
 
 #: ../qml/AlbumSelectorPage.qml:57
 msgid "Select Album"
-msgstr ""
+msgstr "Kies een album"
 
 #: ../qml/AlbumSelectorPage.qml:82
 msgid "Adding photos to album..."
-msgstr ""
+msgstr "Bezig met toevoegen van foto's…"
 
 #: ../qml/AlbumSelectorPage.qml:82 ../qml/AlbumsPage.qml:108
 msgid "Loading albums..."
-msgstr ""
+msgstr "Bezig met laden van albums…"
 
 #: ../qml/AlbumSelectorPage.qml:100 ../qml/AlbumsPage.qml:126
 msgid "Search albums"
-msgstr ""
+msgstr "Albums doorzoeken"
 
 #: ../qml/AlbumSelectorPage.qml:101 ../qml/AlbumsPage.qml:127
 msgid "No albums"
-msgstr ""
+msgstr "Er zijn geen albums"
 
 #: ../qml/AlbumsPage.qml:60 ../qml/GalleryPage.qml:174
 msgid "Albums"
-msgstr ""
+msgstr "Albums"
 
 #: ../qml/AlbumsPage.qml:75
 msgid "New Album"
-msgstr ""
+msgstr "Nieuw album"
 
 #: ../qml/AlbumsPage.qml:79
 msgid "Album Name"
-msgstr ""
+msgstr "Albumnaam"
 
 #: ../qml/AlbumsPage.qml:80
 msgid "Enter album name"
-msgstr ""
+msgstr "Geef het album een naam"
 
 #: ../qml/AlbumsPage.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Annuleren"
 
 #: ../qml/AlbumsPage.qml:90
 msgid "Create"
-msgstr ""
+msgstr "Maken"
 
 #: ../qml/AlbumsPage.qml:147
 msgid "Add Album"
-msgstr ""
+msgstr "Album toevoegen"
 
 #: ../qml/ArchivedPage.qml:28 ../qml/LibraryPage.qml:42
 #: ../qml/LibraryPage.qml:67
 msgid "Archived"
-msgstr ""
+msgstr "Gearchiveerd"
 
 #: ../qml/ArchivedPage.qml:45
 msgid "Loading archived photos..."
-msgstr ""
+msgstr "Bezig met laden van archieffoto's…"
 
 #: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:408
 msgid "Unarchive"
-msgstr ""
+msgstr "Uit archief halen"
 
 #: ../qml/ArchivedPage.qml:151
 msgid "Unarchiving photos..."
-msgstr ""
+msgstr "Bezig met uit archief halen…"
 
 #: ../qml/ConfigurationPage.qml:28
 msgid "Configuration"
-msgstr ""
+msgstr "Instellingen"
 
 #: ../qml/ConfigurationPage.qml:57
 msgid "Clearing cache..."
-msgstr ""
+msgstr "Bezig met wissen van cache…"
 
 #: ../qml/ConfigurationPage.qml:81
 msgid "Immich"
-msgstr ""
+msgstr "Immich"
 
 #: ../qml/ConfigurationPage.qml:84
 msgid "Clear All Cache"
-msgstr ""
+msgstr "Alle cache wissen"
 
 #: ../qml/ConfigurationPage.qml:99
 msgid "Logout"
-msgstr ""
+msgstr "Uitloggen"
 
 #: ../qml/ConfigurationPage.qml:110
 msgid "Misc"
-msgstr ""
+msgstr "Overig"
 
 #: ../qml/ConfigurationPage.qml:113
 msgid "Send crash logs"
-msgstr ""
+msgstr "Crashlogboek versturen"
 
 #: ../qml/ConfigurationPage.qml:114
 msgid "Send anonymous crash reports"
-msgstr ""
+msgstr "Verstuur anonieme crashverslagen"
 
 #: ../qml/DeletedPhotosPage.qml:28
 msgid "Deleted Photos"
-msgstr ""
+msgstr "Verwijderde foto's"
 
 #: ../qml/DeletedPhotosPage.qml:45
 msgid "Loading deleted photos..."
-msgstr ""
+msgstr "Bezig met laden van verwijderde foto's…"
 
 #: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:436
 msgid "Restore"
-msgstr ""
+msgstr "Herstellen"
 
 #: ../qml/DeletedPhotosPage.qml:151
 msgid "Restoring photos..."
-msgstr ""
+msgstr "Bezig met herstellen…"
 
 #: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:450
 msgid "Delete"
-msgstr ""
+msgstr "Verwijderen"
 
 #: ../qml/DeletedPhotosPage.qml:175
 msgid "Permanently deleting photos..."
-msgstr ""
+msgstr "Bezig met permanent verwijderen…"
 
 #: ../qml/FavoritesPage.qml:30 ../qml/LibraryPage.qml:38
 #: ../qml/LibraryPage.qml:64
 msgid "Favorites"
-msgstr ""
+msgstr "Favorieten"
 
 #: ../qml/FavoritesPage.qml:45
 msgid "Loading favorites..."
-msgstr ""
+msgstr "Bezig met laden van favorieten…"
 
 #: ../qml/FavoritesPage.qml:145 ../qml/GalleryPage.qml:220
 #: ../qml/LocationDetailPage.qml:124 ../qml/PersonDetailPage.qml:137
 #: ../qml/SearchPage.qml:208
 msgid "Add to Album"
-msgstr ""
+msgstr "Toevoegen aan album"
 
 #: ../qml/GalleryPage.qml:30 ../qml/Main.qml:61 picpocket.desktop.in.h:1
 msgid "PicPocket"
-msgstr ""
+msgstr "Kiekjesdief"
 
 #: ../qml/GalleryPage.qml:51
 msgid "Loading photos..."
-msgstr ""
+msgstr "Bezig met laden van foto's…"
 
 #: ../qml/GalleryPage.qml:185 ../qml/LibraryPage.qml:9
 msgid "Library"
-msgstr ""
+msgstr "Collectie"
 
 #: ../qml/GalleryPage.qml:196
 msgid "Upload"
-msgstr ""
+msgstr "Uploaden"
 
 #: ../qml/GalleryPage.qml:306
 msgid "Select Photos to Upload"
-msgstr ""
+msgstr "Kies te uploaden foto's"
 
 #: ../qml/GalleryPage.qml:324
 msgid "Uploading photos..."
-msgstr ""
+msgstr "Bezig met uploaden…"
 
 #: ../qml/GalleryPage.qml:327
 msgid "Upload Failed"
-msgstr ""
+msgstr "Het uploaden is mislukt"
 
 #: ../qml/GalleryPage.qml:327
 msgid "Upload Successful"
-msgstr ""
+msgstr "Het uploaden is voltooid"
 
 #: ../qml/GalleryPage.qml:328
 msgid "Upload completed"
-msgstr ""
+msgstr "Het uploaden is voltooid"
 
 #: ../qml/GalleryPage.qml:361
 msgid "OK"
-msgstr ""
+msgstr "Oké"
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
 #: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:94
 #: ../qml/ut_components/CardList.qml:74
 msgid "Search"
-msgstr ""
+msgstr "Zoeken"
 
 #: ../qml/LibraryPage.qml:27
 msgid "Search your entire library"
-msgstr ""
+msgstr "Doorzoek je collectie"
 
 #: ../qml/LibraryPage.qml:30 ../qml/LibraryPage.qml:58 ../qml/PeoplePage.qml:11
 msgid "People"
-msgstr ""
+msgstr "Personen"
 
 #: ../qml/LibraryPage.qml:31
 msgid "Browse photos by people"
-msgstr ""
+msgstr "Blader door foto's van personen"
 
 #: ../qml/LibraryPage.qml:34 ../qml/LibraryPage.qml:61
 msgid "Places"
-msgstr ""
+msgstr "Locaties"
 
 #: ../qml/LibraryPage.qml:35
 msgid "Browse photos by location"
-msgstr ""
+msgstr "Blader door foto's op locatie"
 
 #: ../qml/LibraryPage.qml:39
 msgid "Your favorite photos"
-msgstr ""
+msgstr "Mijn favoriete foto's"
 
 #: ../qml/LibraryPage.qml:43
 msgid "Hidden from main view"
-msgstr ""
+msgstr "Verborgen van hoofdweergave"
 
 #: ../qml/LibraryPage.qml:47
 msgid "Deleted items"
-msgstr ""
+msgstr "Verwijderde items"
 
 #: ../qml/LibraryPage.qml:51
 msgid "No library options available"
-msgstr ""
+msgstr "Er zijn geen collectieopties beschikbaar"
 
 #: ../qml/LocationDetailPage.qml:17
 msgid "Location"
-msgstr ""
+msgstr "Locatie"
 
 #: ../qml/LocationDetailPage.qml:34
 msgid "Loading location photos..."
-msgstr ""
+msgstr "Bezig met laden van locatiefoto's…"
 
 #: ../qml/LocationDetailPage.qml:68
 msgid "Error loading location photos"
-msgstr ""
+msgstr "De locatiefoto's kunnen niet worden geladen"
 
 #: ../qml/LocationsPage.qml:11
 msgid "Locations"
-msgstr ""
+msgstr "Locaties"
 
 #: ../qml/LocationsPage.qml:38
 msgid "Loading locations..."
-msgstr ""
+msgstr "Bezig met laden van locaties…"
 
 #: ../qml/LocationsPage.qml:65
 msgid "No locations found"
-msgstr ""
+msgstr "Er zijn geen locaties aangetroffen"
 
 #: ../qml/Main.qml:94
 msgid "Sign in to Immich"
-msgstr ""
+msgstr "Inloggen op Immich"
 
 #: ../qml/Main.qml:104
 msgid "Sign In"
-msgstr ""
+msgstr "Inloggen"
 
 #: ../qml/Main.qml:109
 msgid "Server URL"
-msgstr ""
+msgstr "Server-url"
 
 #: ../qml/Main.qml:110
 msgid "https://your-server.com"
-msgstr ""
+msgstr "https://mijn-server.nl"
 
 #: ../qml/Main.qml:113
 msgid "Please enter a valid URL"
-msgstr ""
+msgstr "Voer een geldige url in"
 
 #: ../qml/Main.qml:118
 msgid "Email"
-msgstr ""
+msgstr "E-mailadres"
 
 #: ../qml/Main.qml:119
 msgid "user@example.com"
-msgstr ""
+msgstr "gebruiker@voorbeeld.nl"
 
 #: ../qml/Main.qml:122
 msgid "Please enter a valid email"
-msgstr ""
+msgstr "Voer een geldig e-mailadres in"
 
 #: ../qml/Main.qml:127
 msgid "Password"
-msgstr ""
+msgstr "Wachtwoord"
 
 #: ../qml/Main.qml:128
 msgid "Enter your password"
-msgstr ""
+msgstr "Voer je wachtwoord in"
 
 #: ../qml/PeoplePage.qml:38
 msgid "Loading people..."
-msgstr ""
+msgstr "Bezig met laden van personen…"
 
 #: ../qml/PeoplePage.qml:44
 msgid "No name"
-msgstr ""
+msgstr "Naamloos"
 
 #: ../qml/PeoplePage.qml:65
 msgid "No people found"
-msgstr ""
+msgstr "Er zijn geen personen aangetroffen"
 
 #: ../qml/PersonDetailPage.qml:17
 msgid "Person"
-msgstr ""
+msgstr "Persoon"
 
 #: ../qml/PersonDetailPage.qml:34
 msgid "Loading person photos..."
-msgstr ""
+msgstr "Bezig met laden van persoonsfoto's…"
 
 #: ../qml/PersonDetailPage.qml:68
 msgid "Error loading person photos"
-msgstr ""
+msgstr "De persoonsfoto's kunnen niet worden geladen"
 
 #: ../qml/PhotoDetail.qml:55
 msgid "Immich photos viewed today"
-msgstr ""
+msgstr "Vandaag bekeken foto's"
 
 #: ../qml/PhotoDetail.qml:56
 msgid "No Immich photos viewed today"
-msgstr ""
+msgstr "Je hebt vandaag geen foto's bekeken"
 
 #: ../qml/PhotoDetail.qml:265
 msgid "Failed to load image"
-msgstr ""
+msgstr "De foto kan niet worden geladen"
 
 #: ../qml/PhotoDetail.qml:319
 msgid "Failed to load video"
-msgstr ""
+msgstr "De video kan niet worden geladen"
 
 #: ../qml/PhotoDetail.qml:380 ../qml/PhotoDetail.qml:473
 msgid "Share"
-msgstr ""
+msgstr "Delen"
 
 #: ../qml/PhotoDetail.qml:398
 msgid "Favorite"
-msgstr ""
+msgstr "Toev. aan favorieten"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
-msgstr ""
+msgstr "Bezig met zoeken…"
 
 #: ../qml/SearchPage.qml:91
 msgid "Enter search query..."
-msgstr ""
+msgstr "Voer een zoekopdracht in…"
 
 #: ../qml/SearchPage.qml:117
 msgid "Results for: %1"
-msgstr ""
+msgstr "Zoekresultaten voor ‘%1’"
 
 #: ../qml/SearchPage.qml:141
 msgid "No results found"
-msgstr ""
+msgstr "Er zijn geen zoekresultaten"
 
 #: ../qml/SearchPage.qml:149
 msgid "Enter a search query to begin"
-msgstr ""
+msgstr "Voer een zoekopdracht in"
 
 #: ../qml/SearchPage.qml:190
 msgid "Clear"
-msgstr ""
+msgstr "Wissen"
 
 #: ../qml/ut_components/ActionableList.qml:97
 #: ../qml/ut_components/CardList.qml:72
 msgid "No items"
-msgstr ""
+msgstr "Er zijn geen items"
 
 #: ../qml/ut_components/AppHeader.qml:81
 msgid "Back"
-msgstr ""
+msgstr "Terug"
 
 #: ../qml/ut_components/AppHeader.qml:97
 msgid "Settings"
-msgstr ""
+msgstr "Instellingen"
 
 #: ../qml/ut_components/Form.qml:68
 msgid "Submit"
-msgstr ""
+msgstr "Indienen"
 
 #: ../qml/ut_components/InputField.qml:96
 msgid "Invalid input"
-msgstr ""
+msgstr "De invoer is ongeldig"
 
 #: ../qml/ut_components/InputField.qml:169
 msgid "This field is required"
-msgstr ""
+msgstr "Dit veld is vereist"
