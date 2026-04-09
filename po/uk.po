@@ -8,15 +8,17 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-04-10 18:09+0000\n"
+"Last-Translator: Serhii Horichenko <serhii@horichenko.com>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/ubports/"
+"picpocket/uk/>\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 5.17-dev\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -43,7 +45,7 @@ msgstr ""
 #: ../qml/FavoritesPage.qml:132 ../qml/GalleryPage.qml:207
 #: ../qml/LocationsPage.qml:86 ../qml/PeoplePage.qml:86
 msgid "Refresh"
-msgstr ""
+msgstr "Оновити"
 
 #: ../qml/AlbumDetailPage.qml:157
 msgid "Remove from Album"
@@ -131,11 +133,11 @@ msgstr ""
 
 #: ../qml/AlbumsPage.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Скасувати"
 
 #: ../qml/AlbumsPage.qml:90
 msgid "Create"
-msgstr ""
+msgstr "Створити"
 
 #: ../qml/AlbumsPage.qml:147
 msgid "Add Album"
@@ -160,7 +162,7 @@ msgstr ""
 
 #: ../qml/ConfigurationPage.qml:28
 msgid "Configuration"
-msgstr ""
+msgstr "Конфігурація"
 
 #: ../qml/ConfigurationPage.qml:57
 msgid "Clearing cache..."
@@ -188,7 +190,7 @@ msgstr ""
 
 #: ../qml/ConfigurationPage.qml:114
 msgid "Send anonymous crash reports"
-msgstr ""
+msgstr "Надіслати анонімні звіти про збої"
 
 #: ../qml/DeletedPhotosPage.qml:28
 msgid "Deleted Photos"
@@ -208,7 +210,7 @@ msgstr ""
 
 #: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:450
 msgid "Delete"
-msgstr ""
+msgstr "Видалити"
 
 #: ../qml/DeletedPhotosPage.qml:175
 msgid "Permanently deleting photos..."
@@ -267,13 +269,13 @@ msgstr ""
 
 #: ../qml/GalleryPage.qml:361
 msgid "OK"
-msgstr ""
+msgstr "ОК"
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
 #: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:94
 #: ../qml/ut_components/CardList.qml:74
 msgid "Search"
-msgstr ""
+msgstr "Пошук"
 
 #: ../qml/LibraryPage.qml:27
 msgid "Search your entire library"
@@ -345,7 +347,7 @@ msgstr ""
 
 #: ../qml/Main.qml:109
 msgid "Server URL"
-msgstr ""
+msgstr "URL сервера"
 
 #: ../qml/Main.qml:110
 msgid "https://your-server.com"
@@ -369,11 +371,11 @@ msgstr ""
 
 #: ../qml/Main.qml:127
 msgid "Password"
-msgstr ""
+msgstr "Пароль"
 
 #: ../qml/Main.qml:128
 msgid "Enter your password"
-msgstr ""
+msgstr "Вкажіть свій пароль"
 
 #: ../qml/PeoplePage.qml:38
 msgid "Loading people..."
@@ -450,24 +452,24 @@ msgstr ""
 #: ../qml/ut_components/ActionableList.qml:97
 #: ../qml/ut_components/CardList.qml:72
 msgid "No items"
-msgstr ""
+msgstr "Порожньо"
 
 #: ../qml/ut_components/AppHeader.qml:81
 msgid "Back"
-msgstr ""
+msgstr "Назад"
 
 #: ../qml/ut_components/AppHeader.qml:97
 msgid "Settings"
-msgstr ""
+msgstr "Налаштування"
 
 #: ../qml/ut_components/Form.qml:68
 msgid "Submit"
-msgstr ""
+msgstr "Надіслати"
 
 #: ../qml/ut_components/InputField.qml:96
 msgid "Invalid input"
-msgstr ""
+msgstr "Хибне введення"
 
 #: ../qml/ut_components/InputField.qml:169
 msgid "This field is required"
-msgstr ""
+msgstr "Це поле обов'язкове"
