@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-10 18:09+0000\n"
+"PO-Revision-Date: 2026-04-16 11:39+0000\n"
 "Last-Translator: Serhii Horichenko <serhii@horichenko.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/ubports/"
 "picpocket/uk/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 5.17.1-dev\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -117,7 +117,7 @@ msgstr ""
 
 #: ../qml/AlbumsPage.qml:60 ../qml/GalleryPage.qml:174
 msgid "Albums"
-msgstr ""
+msgstr "Альбоми"
 
 #: ../qml/AlbumsPage.qml:75
 msgid "New Album"
@@ -219,7 +219,7 @@ msgstr ""
 #: ../qml/FavoritesPage.qml:30 ../qml/LibraryPage.qml:38
 #: ../qml/LibraryPage.qml:64
 msgid "Favorites"
-msgstr ""
+msgstr "Улюблене"
 
 #: ../qml/FavoritesPage.qml:45
 msgid "Loading favorites..."
@@ -335,7 +335,7 @@ msgstr ""
 
 #: ../qml/LocationsPage.qml:65
 msgid "No locations found"
-msgstr ""
+msgstr "Розташувань не знайдено"
 
 #: ../qml/Main.qml:94
 msgid "Sign in to Immich"
@@ -423,7 +423,7 @@ msgstr ""
 
 #: ../qml/PhotoDetail.qml:398
 msgid "Favorite"
-msgstr ""
+msgstr "Улюблене"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
