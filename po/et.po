@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-15 11:09+0000\n"
+"PO-Revision-Date: 2026-04-18 23:09+0000\n"
 "Last-Translator: Priit Jõerüüt <jrthwlate@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/ubports/"
 "picpocket/et/>\n"
@@ -209,7 +209,7 @@ msgstr ""
 
 #: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:450
 msgid "Delete"
-msgstr ""
+msgstr "Kustuta"
 
 #: ../qml/DeletedPhotosPage.qml:175
 msgid "Permanently deleting photos..."
