@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-18 23:09+0000\n"
+"PO-Revision-Date: 2026-04-20 14:09+0000\n"
 "Last-Translator: Priit Jõerüüt <jrthwlate@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/ubports/"
 "picpocket/et/>\n"
@@ -165,27 +165,27 @@ msgstr "Seadistused"
 
 #: ../qml/ConfigurationPage.qml:57
 msgid "Clearing cache..."
-msgstr ""
+msgstr "Tühjendan puhverdatud sisu…"
 
 #: ../qml/ConfigurationPage.qml:81
 msgid "Immich"
-msgstr ""
+msgstr "Immich"
 
 #: ../qml/ConfigurationPage.qml:84
 msgid "Clear All Cache"
-msgstr ""
+msgstr "Kustuta kõik puhverdatud sisu"
 
 #: ../qml/ConfigurationPage.qml:99
 msgid "Logout"
-msgstr ""
+msgstr "Logi välja"
 
 #: ../qml/ConfigurationPage.qml:110
 msgid "Misc"
-msgstr ""
+msgstr "Varia"
 
 #: ../qml/ConfigurationPage.qml:113
 msgid "Send crash logs"
-msgstr ""
+msgstr "Edasta meile kokkujooksmise logid"
 
 #: ../qml/ConfigurationPage.qml:114
 msgid "Send anonymous crash reports"
@@ -193,19 +193,19 @@ msgstr "Saada arendajale anonüümseid kokkujooksmise aruandeid"
 
 #: ../qml/DeletedPhotosPage.qml:28
 msgid "Deleted Photos"
-msgstr ""
+msgstr "Kustutatud fotod"
 
 #: ../qml/DeletedPhotosPage.qml:45
 msgid "Loading deleted photos..."
-msgstr ""
+msgstr "Laadin kustutatud fotosid…"
 
 #: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:436
 msgid "Restore"
-msgstr ""
+msgstr "Taasta"
 
 #: ../qml/DeletedPhotosPage.qml:151
 msgid "Restoring photos..."
-msgstr ""
+msgstr "Taastan fotosid…"
 
 #: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:450
 msgid "Delete"
@@ -213,136 +213,136 @@ msgstr "Kustuta"
 
 #: ../qml/DeletedPhotosPage.qml:175
 msgid "Permanently deleting photos..."
-msgstr ""
+msgstr "Kustutan fotosid lõplikult…"
 
 #: ../qml/FavoritesPage.qml:30 ../qml/LibraryPage.qml:38
 #: ../qml/LibraryPage.qml:64
 msgid "Favorites"
-msgstr ""
+msgstr "Lemmikud"
 
 #: ../qml/FavoritesPage.qml:45
 msgid "Loading favorites..."
-msgstr ""
+msgstr "Laadin lemmikuid…"
 
 #: ../qml/FavoritesPage.qml:145 ../qml/GalleryPage.qml:220
 #: ../qml/LocationDetailPage.qml:124 ../qml/PersonDetailPage.qml:137
 #: ../qml/SearchPage.qml:208
 msgid "Add to Album"
-msgstr ""
+msgstr "Lisa albumisse"
 
 #: ../qml/GalleryPage.qml:30 ../qml/Main.qml:61 picpocket.desktop.in.h:1
 msgid "PicPocket"
-msgstr ""
+msgstr "PicPocket"
 
 #: ../qml/GalleryPage.qml:51
 msgid "Loading photos..."
-msgstr ""
+msgstr "Laadin fotosid…"
 
 #: ../qml/GalleryPage.qml:185 ../qml/LibraryPage.qml:9
 msgid "Library"
-msgstr ""
+msgstr "Sinu kogumik"
 
 #: ../qml/GalleryPage.qml:196
 msgid "Upload"
-msgstr ""
+msgstr "Laadi üles"
 
 #: ../qml/GalleryPage.qml:306
 msgid "Select Photos to Upload"
-msgstr ""
+msgstr "Vali üleslaaditavad fotod"
 
 #: ../qml/GalleryPage.qml:324
 msgid "Uploading photos..."
-msgstr ""
+msgstr "Laadin fotosid üles…"
 
 #: ../qml/GalleryPage.qml:327
 msgid "Upload Failed"
-msgstr ""
+msgstr "Üleslaadimine ei õnnestunud"
 
 #: ../qml/GalleryPage.qml:327
 msgid "Upload Successful"
-msgstr ""
+msgstr "Üleslaadimine õnnestus"
 
 #: ../qml/GalleryPage.qml:328
 msgid "Upload completed"
-msgstr ""
+msgstr "Sai üleslaaditud"
 
 #: ../qml/GalleryPage.qml:361
 msgid "OK"
-msgstr ""
+msgstr "Sobib"
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
 #: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:94
 #: ../qml/ut_components/CardList.qml:74
 msgid "Search"
-msgstr ""
+msgstr "Otsi"
 
 #: ../qml/LibraryPage.qml:27
 msgid "Search your entire library"
-msgstr ""
+msgstr "Otsi oma kogumikust"
 
 #: ../qml/LibraryPage.qml:30 ../qml/LibraryPage.qml:58 ../qml/PeoplePage.qml:11
 msgid "People"
-msgstr ""
+msgstr "Inimesed"
 
 #: ../qml/LibraryPage.qml:31
 msgid "Browse photos by people"
-msgstr ""
+msgstr "Sirvi fotosid inimeste kaupa"
 
 #: ../qml/LibraryPage.qml:34 ../qml/LibraryPage.qml:61
 msgid "Places"
-msgstr ""
+msgstr "Kohad"
 
 #: ../qml/LibraryPage.qml:35
 msgid "Browse photos by location"
-msgstr ""
+msgstr "Sirvi fotosid kohtade kaupa"
 
 #: ../qml/LibraryPage.qml:39
 msgid "Your favorite photos"
-msgstr ""
+msgstr "Sinu lemmikfotod"
 
 #: ../qml/LibraryPage.qml:43
 msgid "Hidden from main view"
-msgstr ""
+msgstr "Peidetud põhivaatest"
 
 #: ../qml/LibraryPage.qml:47
 msgid "Deleted items"
-msgstr ""
+msgstr "Kustutatud objektid"
 
 #: ../qml/LibraryPage.qml:51
 msgid "No library options available"
-msgstr ""
+msgstr "Ühtegi kogumiku valikut pole saadaval"
 
 #: ../qml/LocationDetailPage.qml:17
 msgid "Location"
-msgstr ""
+msgstr "Asukoht"
 
 #: ../qml/LocationDetailPage.qml:34
 msgid "Loading location photos..."
-msgstr ""
+msgstr "Laadin asukoha fotosid…"
 
 #: ../qml/LocationDetailPage.qml:68
 msgid "Error loading location photos"
-msgstr ""
+msgstr "Viga asukoha fotode laadimisel"
 
 #: ../qml/LocationsPage.qml:11
 msgid "Locations"
-msgstr ""
+msgstr "Asukohad"
 
 #: ../qml/LocationsPage.qml:38
 msgid "Loading locations..."
-msgstr ""
+msgstr "Laadin asukohti…"
 
 #: ../qml/LocationsPage.qml:65
 msgid "No locations found"
-msgstr ""
+msgstr "Asukohti ei leidu"
 
 #: ../qml/Main.qml:94
 msgid "Sign in to Immich"
-msgstr ""
+msgstr "Logi sisse Immichisse"
 
 #: ../qml/Main.qml:104
 msgid "Sign In"
-msgstr ""
+msgstr "Logi sisse"
 
 #: ../qml/Main.qml:109
 msgid "Server URL"
@@ -350,71 +350,71 @@ msgstr "Serveri võrguaadress"
 
 #: ../qml/Main.qml:110
 msgid "https://your-server.com"
-msgstr ""
+msgstr "https://sinu-server.ee"
 
 #: ../qml/Main.qml:113
 msgid "Please enter a valid URL"
-msgstr ""
+msgstr "Palun sisesta korrektne võrguaadress"
 
 #: ../qml/Main.qml:118
 msgid "Email"
-msgstr ""
+msgstr "E-post"
 
 #: ../qml/Main.qml:119
 msgid "user@example.com"
-msgstr ""
+msgstr "kasutajanimi@toredomeen.ee"
 
 #: ../qml/Main.qml:122
 msgid "Please enter a valid email"
-msgstr ""
+msgstr "Palun sisesta korrektne e-posti aadress"
 
 #: ../qml/Main.qml:127
 msgid "Password"
-msgstr ""
+msgstr "Salasõna"
 
 #: ../qml/Main.qml:128
 msgid "Enter your password"
-msgstr ""
+msgstr "Sisesta oma salasõna"
 
 #: ../qml/PeoplePage.qml:38
 msgid "Loading people..."
-msgstr ""
+msgstr "Laadin inimesi…"
 
 #: ../qml/PeoplePage.qml:44
 msgid "No name"
-msgstr ""
+msgstr "Nimi puudub"
 
 #: ../qml/PeoplePage.qml:65
 msgid "No people found"
-msgstr ""
+msgstr "Inimesi ei leidu"
 
 #: ../qml/PersonDetailPage.qml:17
 msgid "Person"
-msgstr ""
+msgstr "Isik"
 
 #: ../qml/PersonDetailPage.qml:34
 msgid "Loading person photos..."
-msgstr ""
+msgstr "Laadin isikute fotosid…"
 
 #: ../qml/PersonDetailPage.qml:68
 msgid "Error loading person photos"
-msgstr ""
+msgstr "Viga isikute fotode laadimisel"
 
 #: ../qml/PhotoDetail.qml:55
 msgid "Immich photos viewed today"
-msgstr ""
+msgstr "Täna vaadatud Immichi fotod"
 
 #: ../qml/PhotoDetail.qml:56
 msgid "No Immich photos viewed today"
-msgstr ""
+msgstr "Sa pole täna vaadanud ühtegi Immichi fotot"
 
 #: ../qml/PhotoDetail.qml:265
 msgid "Failed to load image"
-msgstr ""
+msgstr "Pildi laadimine ei õnnestunud"
 
 #: ../qml/PhotoDetail.qml:319
 msgid "Failed to load video"
-msgstr ""
+msgstr "Video laadimine ei õnnestunud"
 
 #: ../qml/PhotoDetail.qml:380 ../qml/PhotoDetail.qml:473
 msgid "Share"
@@ -422,31 +422,31 @@ msgstr "Jaga"
 
 #: ../qml/PhotoDetail.qml:398
 msgid "Favorite"
-msgstr ""
+msgstr "Lisa lemmikuks"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
-msgstr ""
+msgstr "Otsin…"
 
 #: ../qml/SearchPage.qml:91
 msgid "Enter search query..."
-msgstr ""
+msgstr "Sisesta otsingupäring…"
 
 #: ../qml/SearchPage.qml:117
 msgid "Results for: %1"
-msgstr ""
+msgstr "Otsingutulemused märksõnale: %1"
 
 #: ../qml/SearchPage.qml:141
 msgid "No results found"
-msgstr ""
+msgstr "Tulemusi ei leidu"
 
 #: ../qml/SearchPage.qml:149
 msgid "Enter a search query to begin"
-msgstr ""
+msgstr "Alustamiseks sisesta otsingusõna"
 
 #: ../qml/SearchPage.qml:190
 msgid "Clear"
-msgstr ""
+msgstr "Tühjenda"
 
 #: ../qml/ut_components/ActionableList.qml:97
 #: ../qml/ut_components/CardList.qml:72
@@ -455,7 +455,7 @@ msgstr "Objekte pole"
 
 #: ../qml/ut_components/AppHeader.qml:81
 msgid "Back"
-msgstr ""
+msgstr "Tagasi"
 
 #: ../qml/ut_components/AppHeader.qml:97
 msgid "Settings"
@@ -467,8 +467,8 @@ msgstr "Saada"
 
 #: ../qml/ut_components/InputField.qml:96
 msgid "Invalid input"
-msgstr ""
+msgstr "Vigane sisend"
 
 #: ../qml/ut_components/InputField.qml:169
 msgid "This field is required"
-msgstr ""
+msgstr "See väli on kohustuslik"
