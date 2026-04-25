@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-20 14:09+0000\n"
+"PO-Revision-Date: 2026-04-26 17:09+0000\n"
 "Last-Translator: libermax <libremax@protonmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/ubports/picpocket/"
 "fr/>\n"
@@ -220,7 +220,7 @@ msgstr "Suppression définitive des photos..."
 #: ../qml/FavoritesPage.qml:30 ../qml/LibraryPage.qml:38
 #: ../qml/LibraryPage.qml:64
 msgid "Favorites"
-msgstr "Favorites"
+msgstr "Favoris"
 
 #: ../qml/FavoritesPage.qml:45
 msgid "Loading favorites..."
@@ -424,7 +424,7 @@ msgstr "Partager"
 
 #: ../qml/PhotoDetail.qml:398
 msgid "Favorite"
-msgstr "Préféré"
+msgstr "Favori"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
