@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-26 17:09+0000\n"
+"PO-Revision-Date: 2026-04-27 13:56+0000\n"
 "Last-Translator: libermax <libremax@protonmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/ubports/picpocket/"
 "fr/>\n"
@@ -376,7 +376,7 @@ msgstr "Mot de passe"
 
 #: ../qml/Main.qml:128
 msgid "Enter your password"
-msgstr "Entrez votre mot de passe"
+msgstr "Saisissez votre mot de passe"
 
 #: ../qml/PeoplePage.qml:38
 msgid "Loading people..."
@@ -453,7 +453,7 @@ msgstr ""
 #: ../qml/ut_components/ActionableList.qml:97
 #: ../qml/ut_components/CardList.qml:72
 msgid "No items"
-msgstr "Pas d'item"
+msgstr "Aucun élément"
 
 #: ../qml/ut_components/AppHeader.qml:81
 msgid "Back"
@@ -469,7 +469,7 @@ msgstr "Soumettre"
 
 #: ../qml/ut_components/InputField.qml:96
 msgid "Invalid input"
-msgstr "Saisie invalide"
+msgstr "Saisie non valide"
 
 #: ../qml/ut_components/InputField.qml:169
 msgid "This field is required"
