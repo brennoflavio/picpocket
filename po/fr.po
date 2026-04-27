@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-27 13:56+0000\n"
+"PO-Revision-Date: 2026-04-28 16:09+0000\n"
 "Last-Translator: libermax <libremax@protonmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/ubports/picpocket/"
 "fr/>\n"
@@ -83,14 +83,12 @@ msgid "Trashing photos..."
 msgstr "Mettre des photos à la corbeille..."
 
 #: ../qml/AlbumSelectorPage.qml:38 ../qml/AlbumsPage.qml:41
-#, fuzzy
 msgid "item"
-msgstr "item"
+msgstr "élément"
 
 #: ../qml/AlbumSelectorPage.qml:38 ../qml/AlbumsPage.qml:41
-#, fuzzy
 msgid "items"
-msgstr "items"
+msgstr "éléments"
 
 #: ../qml/AlbumSelectorPage.qml:40 ../qml/AlbumsPage.qml:43
 msgid "Shared"
@@ -448,7 +446,7 @@ msgstr "Saisissez une requête pour commencer"
 
 #: ../qml/SearchPage.qml:190
 msgid "Clear"
-msgstr ""
+msgstr "Effacer"
 
 #: ../qml/ut_components/ActionableList.qml:97
 #: ../qml/ut_components/CardList.qml:72
