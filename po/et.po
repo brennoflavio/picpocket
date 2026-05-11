@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-13 16:32+0000\n"
+"POT-Creation-Date: 2026-04-29 20:01+0000\n"
 "PO-Revision-Date: 2026-04-20 14:09+0000\n"
 "Last-Translator: Priit Jõerüüt <jrthwlate@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/ubports/"
@@ -56,7 +56,7 @@ msgstr "Eemaldan albumist…"
 
 #: ../qml/AlbumDetailPage.qml:181 ../qml/FavoritesPage.qml:164
 #: ../qml/GalleryPage.qml:239 ../qml/LocationDetailPage.qml:143
-#: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:408
+#: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:564
 #: ../qml/SearchPage.qml:227
 msgid "Archive"
 msgstr "Arhiveeri"
@@ -71,7 +71,7 @@ msgstr "Arhiveerin fotosid…"
 #: ../qml/FavoritesPage.qml:188 ../qml/GalleryPage.qml:263
 #: ../qml/LibraryPage.qml:46 ../qml/LibraryPage.qml:70
 #: ../qml/LocationDetailPage.qml:167 ../qml/PersonDetailPage.qml:180
-#: ../qml/PhotoDetail.qml:422 ../qml/SearchPage.qml:251
+#: ../qml/PhotoDetail.qml:578 ../qml/SearchPage.qml:251
 msgid "Trash"
 msgstr "Viska prügikasti"
 
@@ -151,7 +151,7 @@ msgstr "Arhiveeritud"
 msgid "Loading archived photos..."
 msgstr "Laadin arhiveeritud fotosid…"
 
-#: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:408
+#: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:564
 msgid "Unarchive"
 msgstr "Eemalda arhiivist"
 
@@ -199,7 +199,7 @@ msgstr "Kustutatud fotod"
 msgid "Loading deleted photos..."
 msgstr "Laadin kustutatud fotosid…"
 
-#: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:436
+#: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:592
 msgid "Restore"
 msgstr "Taasta"
 
@@ -207,7 +207,7 @@ msgstr "Taasta"
 msgid "Restoring photos..."
 msgstr "Taastan fotosid…"
 
-#: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:450
+#: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:606
 msgid "Delete"
 msgstr "Kustuta"
 
@@ -271,7 +271,7 @@ msgid "OK"
 msgstr "Sobib"
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
-#: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:94
+#: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:92
 #: ../qml/ut_components/CardList.qml:74
 msgid "Search"
 msgstr "Otsi"
@@ -400,27 +400,27 @@ msgstr "Laadin isikute fotosid…"
 msgid "Error loading person photos"
 msgstr "Viga isikute fotode laadimisel"
 
-#: ../qml/PhotoDetail.qml:55
+#: ../qml/PhotoDetail.qml:56
 msgid "Immich photos viewed today"
 msgstr "Täna vaadatud Immichi fotod"
 
-#: ../qml/PhotoDetail.qml:56
+#: ../qml/PhotoDetail.qml:57
 msgid "No Immich photos viewed today"
 msgstr "Sa pole täna vaadanud ühtegi Immichi fotot"
 
-#: ../qml/PhotoDetail.qml:265
+#: ../qml/PhotoDetail.qml:421
 msgid "Failed to load image"
 msgstr "Pildi laadimine ei õnnestunud"
 
-#: ../qml/PhotoDetail.qml:319
+#: ../qml/PhotoDetail.qml:475
 msgid "Failed to load video"
 msgstr "Video laadimine ei õnnestunud"
 
-#: ../qml/PhotoDetail.qml:380 ../qml/PhotoDetail.qml:473
+#: ../qml/PhotoDetail.qml:536 ../qml/PhotoDetail.qml:629
 msgid "Share"
 msgstr "Jaga"
 
-#: ../qml/PhotoDetail.qml:398
+#: ../qml/PhotoDetail.qml:554
 msgid "Favorite"
 msgstr "Lisa lemmikuks"
 
@@ -448,27 +448,27 @@ msgstr "Alustamiseks sisesta otsingusõna"
 msgid "Clear"
 msgstr "Tühjenda"
 
-#: ../qml/ut_components/ActionableList.qml:97
+#: ../qml/ut_components/ActionableList.qml:94
 #: ../qml/ut_components/CardList.qml:72
 msgid "No items"
 msgstr "Objekte pole"
 
-#: ../qml/ut_components/AppHeader.qml:81
+#: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
 msgstr "Tagasi"
 
-#: ../qml/ut_components/AppHeader.qml:97
+#: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
 msgstr "Seadistused"
 
-#: ../qml/ut_components/Form.qml:68
+#: ../qml/ut_components/Form.qml:67
 msgid "Submit"
 msgstr "Saada"
 
-#: ../qml/ut_components/InputField.qml:96
+#: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
 msgstr "Vigane sisend"
 
-#: ../qml/ut_components/InputField.qml:169
+#: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
 msgstr "See väli on kohustuslik"
