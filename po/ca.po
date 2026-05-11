@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-13 16:32+0000\n"
-"PO-Revision-Date: 2026-04-28 16:09+0000\n"
+"PO-Revision-Date: 2026-05-11 15:08+0000\n"
 "Last-Translator: Walter Garcia-Fontes <walter.garcia@upf.edu>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/ubports/"
 "picpocket/ca/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17.1-dev\n"
+"X-Generator: Weblate 2026.5-dev\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -422,7 +422,7 @@ msgstr "Comparteix"
 
 #: ../qml/PhotoDetail.qml:398
 msgid "Favorite"
-msgstr "Preferit"
+msgstr "Preferida"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
