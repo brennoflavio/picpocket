@@ -1,7 +1,6 @@
 import Lomiri.Components 1.3
 import Lomiri.Components.Popups 1.3
 import Lomiri.Content 1.3
-import QtMultimedia 5.12
 /*
  * Copyright (C) 2025  Brenno Flávio de Almeida
  *
@@ -41,22 +40,37 @@ Page {
     property string personId: ""
     property string locationId: ""
     property string searchQuery: ""
-    property bool imageZoomed: photoDetailPage.fileType === "IMAGE" && mediaLoader.item && mediaLoader.item.zoomed
+    property var currentMediaItem: photoDetailPage.filePath !== "" ? ({
+        "filePath": photoDetailPage.filePath,
+        "id": photoDetailPage.photoId,
+        "fileType": photoDetailPage.fileType,
+        "name": photoDetailPage.photoName
+    }) : null
+    readonly property var previousMediaItem: photoDetailPage.isLoading ? undefined : (photoDetailPage.previousId !== "" ? ({
+        "id": photoDetailPage.previousId
+    }) : null)
+    readonly property var nextMediaItem: photoDetailPage.isLoading ? undefined : (photoDetailPage.nextId !== "" ? ({
+        "id": photoDetailPage.nextId
+    }) : null)
+
+    function setCurrentMedia(path, mediaType, mediaName) {
+        photoDetailPage.filePath = path || "";
+        photoDetailPage.fileType = mediaType || "IMAGE";
+        photoDetailPage.photoName = mediaName || "";
+        photoDetailPage.currentMediaItem = photoDetailPage.filePath !== "" ? ({
+            "filePath": photoDetailPage.filePath,
+            "id": photoDetailPage.photoId,
+            "fileType": photoDetailPage.fileType,
+            "name": photoDetailPage.photoName
+        }) : null;
+    }
 
     function loadPhotoDetails() {
         photoDetailPage.isLoading = true;
         photosViewedMetric.increment(1);
         python.call('immich_client.preview', [photoId, previewType, albumId, personId, locationId, searchQuery], function(result) {
             if (result) {
-                if (result.filePath)
-                    photoDetailPage.filePath = result.filePath;
-
-                if (result.name)
-                    photoDetailPage.photoName = result.name;
-
-                if (result.file_type)
-                    photoDetailPage.fileType = result.file_type;
-
+                photoDetailPage.setCurrentMedia(result.filePath || photoDetailPage.filePath, result.file_type || photoDetailPage.fileType, result.name || photoDetailPage.photoName);
                 photoDetailPage.previousId = result.previous || "";
                 photoDetailPage.nextId = result.next || "";
                 photoDetailPage.isFavorite = result.favorite || false;
@@ -103,6 +117,7 @@ Page {
 
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'));
+            photoDetailPage.setCurrentMedia(photoDetailPage.filePath, photoDetailPage.fileType, photoDetailPage.photoName);
             importModule('immich_client', function() {
                 if (photoId && photoId !== "")
                     loadPhotoDetails();
@@ -126,313 +141,27 @@ Page {
             id: mediaLoader
 
             anchors.fill: parent
-            sourceComponent: photoDetailPage.fileType === "VIDEO" ? videoComponent : imageComponent
+            sourceComponent: photoDetailPage.currentMediaItem && photoDetailPage.currentMediaItem.fileType === "VIDEO" ? videoComponent : imageComponent
         }
 
-        MouseArea {
-            id: swipeArea
-
-            property real startX: 0
-            property bool swiping: false
-
-            anchors.fill: parent
-            enabled: !photoDetailPage.imageZoomed
-            z: -1
-            onPressed: {
-                startX = mouse.x;
-                swiping = true;
-            }
-            onReleased: {
-                if (swiping) {
-                    var diff = mouse.x - startX;
-                    if (Math.abs(diff) > units.gu(10)) {
-                        if (diff > 0 && photoDetailPage.previousId !== "")
-                            navigateToPrevious();
-                        else if (diff < 0 && photoDetailPage.nextId !== "")
-                            navigateToNext();
-                    }
-                }
-                swiping = false;
-            }
-            onCanceled: {
-                swiping = false;
-            }
-        }
-
-        MouseArea {
-            id: previousArea
-
-            width: units.gu(8)
-            height: units.gu(12)
-            enabled: photoDetailPage.previousId !== "" && !photoDetailPage.imageZoomed
-            onClicked: navigateToPrevious()
-
-            anchors {
-                left: parent.left
-                leftMargin: units.gu(1)
-                verticalCenter: parent.verticalCenter
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: theme.palette.normal.foreground
-                opacity: previousArea.pressed ? 0.3 : 0
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100
-                    }
-
-                }
-
-            }
-
-            Icon {
-                width: units.gu(4)
-                height: width
-                name: "go-previous"
-                color: "white"
-                opacity: previousArea.containsMouse || previousArea.pressed ? 0.9 : 0.5
-                visible: previousArea.enabled
-
-                anchors {
-                    left: parent.left
-                    leftMargin: units.gu(1)
-                    verticalCenter: parent.verticalCenter
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100
-                    }
-
-                }
-
-            }
-
-        }
-
-        MouseArea {
-            id: nextArea
-
-            width: units.gu(8)
-            height: units.gu(12)
-            enabled: photoDetailPage.nextId !== "" && !photoDetailPage.imageZoomed
-            onClicked: navigateToNext()
-
-            anchors {
-                right: parent.right
-                rightMargin: units.gu(1)
-                verticalCenter: parent.verticalCenter
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: theme.palette.normal.foreground
-                opacity: nextArea.pressed ? 0.3 : 0
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100
-                    }
-
-                }
-
-            }
-
-            Icon {
-                width: units.gu(4)
-                height: width
-                name: "go-next"
-                color: "white"
-                opacity: nextArea.containsMouse || nextArea.pressed ? 0.9 : 0.5
-                visible: nextArea.enabled
-
-                anchors {
-                    right: parent.right
-                    rightMargin: units.gu(1)
-                    verticalCenter: parent.verticalCenter
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100
-                    }
-
-                }
-
-            }
-
+        ActivityIndicator {
+            anchors.centerIn: parent
+            running: photoDetailPage.isLoading
+            visible: running
+            z: 1
         }
 
         Component {
             id: imageComponent
 
-            Item {
-                id: imageViewer
-
-                property real minZoom: 1
-                property real maxZoom: 4
-                property real zoomScale: 1
-                property bool zoomed: zoomScale > 1.01
-                property real imageAspectRatio: photoImage.implicitWidth > 0 && photoImage.implicitHeight > 0 ? photoImage.implicitWidth / photoImage.implicitHeight : 1
-                property real fittedWidth: {
-                    if (photoImage.status !== Image.Ready || photoImage.implicitWidth <= 0 || photoImage.implicitHeight <= 0)
-                        return width;
-
-                    return Math.min(width, height * imageAspectRatio);
-                }
-                property real fittedHeight: {
-                    if (photoImage.status !== Image.Ready || photoImage.implicitWidth <= 0 || photoImage.implicitHeight <= 0)
-                        return height;
-
-                    return Math.min(height, width / imageAspectRatio);
-                }
-
-                function clamp(value, minValue, maxValue) {
-                    return Math.max(minValue, Math.min(value, maxValue));
-                }
-
-                function ensureBounds() {
-                    var maxX = Math.max(0, imageFlick.contentWidth - imageFlick.width);
-                    var maxY = Math.max(0, imageFlick.contentHeight - imageFlick.height);
-                    imageFlick.contentX = clamp(imageFlick.contentX, 0, maxX);
-                    imageFlick.contentY = clamp(imageFlick.contentY, 0, maxY);
-                }
-
-                function panBy(deltaX, deltaY) {
-                    var maxX = Math.max(0, imageFlick.contentWidth - imageFlick.width);
-                    var maxY = Math.max(0, imageFlick.contentHeight - imageFlick.height);
-                    imageFlick.contentX = clamp(imageFlick.contentX - deltaX, 0, maxX);
-                    imageFlick.contentY = clamp(imageFlick.contentY - deltaY, 0, maxY);
-                }
-
-                function resetZoom() {
-                    zoomScale = 1;
-                    imageFlick.contentX = 0;
-                    imageFlick.contentY = 0;
-                }
-
+            ImageViewer {
                 anchors.fill: parent
-                onWidthChanged: {
-                    if (zoomed)
-                        ensureBounds();
-                    else
-                        resetZoom();
-                }
-                onHeightChanged: {
-                    if (zoomed)
-                        ensureBounds();
-                    else
-                        resetZoom();
-                }
-
-                Connections {
-                    function onFilePathChanged() {
-                        imageViewer.resetZoom();
-                    }
-
-                    target: photoDetailPage
-                }
-
-                Flickable {
-                    id: imageFlick
-
-                    anchors.fill: parent
-                    clip: true
-                    interactive: false
-                    boundsBehavior: Flickable.StopAtBounds
-                    contentWidth: Math.max(width, imageViewer.fittedWidth * imageViewer.zoomScale)
-                    contentHeight: Math.max(height, imageViewer.fittedHeight * imageViewer.zoomScale)
-
-                    Item {
-                        id: zoomContent
-
-                        x: width < imageFlick.width ? (imageFlick.width - width) / 2 : 0
-                        y: height < imageFlick.height ? (imageFlick.height - height) / 2 : 0
-                        width: imageViewer.fittedWidth * imageViewer.zoomScale
-                        height: imageViewer.fittedHeight * imageViewer.zoomScale
-
-                        Image {
-                            id: photoImage
-
-                            anchors.fill: parent
-                            source: photoDetailPage.filePath ? "file://" + photoDetailPage.filePath : ""
-                            fillMode: Image.PreserveAspectFit
-                            cache: false
-                            asynchronous: true
-                            sourceSize.width: imageViewer.width > 0 ? imageViewer.width : 1920
-                            sourceSize.height: imageViewer.height > 0 ? imageViewer.height : 1080
-                        }
-
-                    }
-
-                }
-
-                PinchArea {
-                    id: pinchArea
-
-                    property real startZoom: 1
-
-                    anchors.fill: parent
-                    enabled: photoImage.status === Image.Ready
-                    onPinchStarted: {
-                        startZoom = imageViewer.zoomScale;
-                    }
-                    onPinchUpdated: {
-                        var previousContentWidth = imageFlick.contentWidth;
-                        var previousContentHeight = imageFlick.contentHeight;
-                        var centerRatioX = (imageFlick.contentX + pinch.center.x) / Math.max(1, previousContentWidth);
-                        var centerRatioY = (imageFlick.contentY + pinch.center.y) / Math.max(1, previousContentHeight);
-                        imageViewer.zoomScale = imageViewer.clamp(startZoom * pinch.scale, imageViewer.minZoom, imageViewer.maxZoom);
-                        imageFlick.contentX = centerRatioX * imageFlick.contentWidth - pinch.center.x;
-                        imageFlick.contentY = centerRatioY * imageFlick.contentHeight - pinch.center.y;
-                        imageViewer.ensureBounds();
-                    }
-                    onPinchFinished: {
-                        if (imageViewer.zoomed)
-                            imageViewer.ensureBounds();
-                        else
-                            imageViewer.resetZoom();
-                    }
-
-                    MouseArea {
-                        id: panArea
-
-                        property real lastX: 0
-                        property real lastY: 0
-
-                        anchors.fill: parent
-                        enabled: imageViewer.zoomed && !pinchArea.pinch.active
-                        preventStealing: true
-                        onPressed: {
-                            lastX = mouse.x;
-                            lastY = mouse.y;
-                        }
-                        onPositionChanged: {
-                            if (!pressed)
-                                return ;
-
-                            imageViewer.panBy(mouse.x - lastX, mouse.y - lastY);
-                            lastX = mouse.x;
-                            lastY = mouse.y;
-                        }
-                    }
-
-                }
-
-                ActivityIndicator {
-                    anchors.centerIn: parent
-                    running: photoDetailPage.isLoading || photoImage.status === Image.Loading
-                    visible: running
-                }
-
-                Label {
-                    anchors.centerIn: parent
-                    text: i18n.tr("Failed to load image")
-                    visible: !photoDetailPage.isLoading && photoImage.status === Image.Error && photoDetailPage.filePath !== ""
-                }
-
+                currentItem: photoDetailPage.currentMediaItem
+                previousItem: photoDetailPage.previousMediaItem
+                nextItem: photoDetailPage.nextMediaItem
+                maximumZoom: 4
+                onPreviousTriggered: photoDetailPage.navigateToPrevious()
+                onNextTriggered: photoDetailPage.navigateToNext()
             }
 
         }
@@ -440,103 +169,13 @@ Page {
         Component {
             id: videoComponent
 
-            Item {
+            VideoViewer {
                 anchors.fill: parent
-
-                Video {
-                    id: videoPlayer
-
-                    anchors.fill: parent
-                    source: photoDetailPage.filePath ? "file://" + photoDetailPage.filePath : ""
-                    fillMode: VideoOutput.PreserveAspectFit
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            if (videoPlayer.playbackState === MediaPlayer.PlayingState)
-                                videoPlayer.pause();
-                            else
-                                videoPlayer.play();
-                        }
-                    }
-
-                }
-
-                Icon {
-                    id: playPauseIcon
-
-                    anchors.centerIn: parent
-                    width: units.gu(8)
-                    height: width
-                    name: videoPlayer.playbackState === MediaPlayer.PlayingState ? "media-playback-pause" : "media-playback-start"
-                    color: "white"
-                    opacity: 0.8
-                    visible: videoPlayer.playbackState !== MediaPlayer.PlayingState
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: videoPlayer.play()
-                    }
-
-                }
-
-                ActivityIndicator {
-                    anchors.centerIn: parent
-                    running: photoDetailPage.isLoading
-                    visible: running
-                }
-
-                Label {
-                    anchors.centerIn: parent
-                    text: i18n.tr("Failed to load video")
-                    visible: !photoDetailPage.isLoading && videoPlayer.status === MediaPlayer.InvalidMedia && photoDetailPage.filePath !== ""
-                }
-
-                Row {
-                    spacing: units.gu(2)
-                    visible: videoPlayer.hasVideo
-
-                    anchors {
-                        bottom: parent.bottom
-                        horizontalCenter: parent.horizontalCenter
-                        margins: units.gu(2)
-                    }
-
-                    Icon {
-                        width: units.gu(4)
-                        height: width
-                        name: videoPlayer.playbackState === MediaPlayer.PlayingState ? "media-playback-pause" : "media-playback-start"
-                        color: "white"
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                if (videoPlayer.playbackState === MediaPlayer.PlayingState)
-                                    videoPlayer.pause();
-                                else
-                                    videoPlayer.play();
-                            }
-                        }
-
-                    }
-
-                    Slider {
-                        id: progressSlider
-
-                        width: units.gu(20)
-                        minimumValue: 0
-                        maximumValue: videoPlayer.duration
-                        value: videoPlayer.position
-                        live: false
-                        onValueChanged: {
-                            if (pressed)
-                                videoPlayer.seek(value);
-
-                        }
-                    }
-
-                }
-
+                currentItem: photoDetailPage.currentMediaItem
+                previousItem: photoDetailPage.previousMediaItem
+                nextItem: photoDetailPage.nextMediaItem
+                onPreviousTriggered: photoDetailPage.navigateToPrevious()
+                onNextTriggered: photoDetailPage.navigateToNext()
             }
 
         }

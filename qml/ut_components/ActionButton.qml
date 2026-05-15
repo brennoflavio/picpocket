@@ -40,6 +40,15 @@ import QtQuick.Layouts 1.3
  * }
  * \endqml
  *
+ * Example usage with a custom SVG source:
+ * \qml
+ * ActionButton {
+ *     text: "Continue"
+ *     iconSource: Qt.resolvedUrl("../assets/logo.svg")
+ *     onClicked: continueFlow()
+ * }
+ * \endqml
+ *
  * Example usage for a destructive action:
  * \qml
  * ActionButton {
@@ -62,12 +71,21 @@ import QtQuick.Layouts 1.3
  *     onClicked: doCustomAction()
  * }
  * \endqml
+ *
+ * Properties:
+ * - text (string): Button label.
+ * - iconName (string): Theme icon name used when iconSource is empty.
+ * - iconSource (url): Optional custom icon file URL that takes precedence over iconName.
+ * - backgroundColor, textColor, iconColor: Visual customization aliases.
+ * - enabled (bool): Whether the button accepts clicks.
  */
 Rectangle {
     id: actionButton
 
     property string text: ""
     property string iconName: "add"
+    property url iconSource: ""
+    readonly property bool hasIconSource: iconSource.toString() !== ""
     property alias backgroundColor: actionButton.color
     property alias textColor: buttonText.color
     property alias iconColor: buttonIcon.color
@@ -98,7 +116,8 @@ Rectangle {
         Icon {
             id: buttonIcon
 
-            name: actionButton.iconName
+            source: actionButton.hasIconSource ? actionButton.iconSource : ""
+            name: actionButton.hasIconSource ? "" : actionButton.iconName
             width: units.gu(2.5)
             height: units.gu(2.5)
             color: "white"

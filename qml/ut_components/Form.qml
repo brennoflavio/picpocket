@@ -51,10 +51,24 @@ import QtQuick.Layouts 1.3
  * }
  * \endqml
  *
+ * Example usage with a custom submit icon:
+ * \qml
+ * Form {
+ *     buttonText: i18n.tr("Sign in with Brand")
+ *     buttonIconSource: Qt.resolvedUrl("../assets/logo.svg")
+ *
+ *     InputField {
+ *         title: i18n.tr("Email")
+ *         property bool isValid: text.length > 0
+ *     }
+ * }
+ * \endqml
+ *
  * API:
  * - `fields` (default property): declaratively add child form fields.
  * - `buttonText`: label shown on the submit button.
- * - `buttonIconName`: optional icon name for the submit button.
+ * - `buttonIconName`: optional theme icon name used when `buttonIconSource` is empty.
+ * - `buttonIconSource`: optional custom icon file URL that takes precedence over `buttonIconName`.
  * - `allFieldsValid`: read-only helper reflecting the validation status.
  * - `submitted`: signal emitted when the submit button is triggered.
  */
@@ -65,8 +79,10 @@ Item {
     default property alias fields: fieldsContainer.children
     //! Text label displayed on the submit button
     property string buttonText: i18n.tr("Submit")
-    //! Icon name applied to the submit button; leave empty for no icon
+    //! Theme icon name applied to the submit button when buttonIconSource is empty
     property string buttonIconName: ""
+    //! Custom icon file URL applied to the submit button; takes precedence over buttonIconName
+    property url buttonIconSource: ""
     //! Consolidated validity state evaluated from child fields providing `isValid`
     property bool allFieldsValid: {
         for (var i = 0; i < fieldsContainer.children.length; i++) {
@@ -117,6 +133,7 @@ Item {
             width: calculatedWidth
             text: form.buttonText
             iconName: form.buttonIconName
+            iconSource: form.buttonIconSource
             enabled: form.allFieldsValid
             onClicked: {
                 Qt.inputMethod.commit();

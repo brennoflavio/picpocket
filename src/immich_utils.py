@@ -37,6 +37,10 @@ from src.ut_components.memoize import hash_function_args
 from src.utils import is_webp
 
 
+def api_url(url: str, path: str) -> str:
+    return urljoin(url.rstrip("/") + "/", path.lstrip("/"))
+
+
 def download_thumbnail(url: str, token: str, image_id: str) -> str:
     base_folder = os.path.join(get_cache_path(), "picpocket/thumbnail")
     os.makedirs(base_folder, exist_ok=True)
@@ -46,7 +50,7 @@ def download_thumbnail(url: str, token: str, image_id: str) -> str:
         return file_path
 
     response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
+        url=api_url(url, f"/api/assets/{image_id}/thumbnail"),
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "thumbnail"},
     )
@@ -69,7 +73,7 @@ def download_photo_preview(url: str, token: str, image_id: str) -> str:
         return file_path
 
     response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/thumbnail"),
+        url=api_url(url, f"/api/assets/{image_id}/thumbnail"),
         headers={"Authorization": f"Bearer {token}"},
         params={"size": "preview"},
     )
@@ -88,7 +92,7 @@ def download_video_preview(url: str, token: str, video_id: str) -> str:
         return file_path
 
     response = http.get(
-        url=urljoin(url, f"/api/assets/{video_id}/video/playback"),
+        url=api_url(url, f"/api/assets/{video_id}/video/playback"),
         headers={"Authorization": f"Bearer {token}"},
     )
     response.raise_for_status()
@@ -110,7 +114,7 @@ def download_original(image_id: str) -> str:
 
         if not file_name:
             metadata_response = http.get(
-                url=urljoin(url, f"/api/assets/{image_id}"),
+                url=api_url(url, f"/api/assets/{image_id}"),
                 headers={"Authorization": f"Bearer {token}"},
             )
             metadata_response.raise_for_status()
@@ -126,7 +130,7 @@ def download_original(image_id: str) -> str:
         return file_path
 
     photo_response = http.get(
-        url=urljoin(url, f"/api/assets/{image_id}/original"),
+        url=api_url(url, f"/api/assets/{image_id}/original"),
         headers={"Authorization": f"Bearer {token}"},
     )
     photo_response.raise_for_status()
@@ -152,7 +156,7 @@ def upload_photo(url: str, token: str, file_path: str) -> http.Response:
 
     with open(file_path, "rb") as f:
         response = http.post_file(
-            url=urljoin(url, "/api/assets"),
+            url=api_url(url, "/api/assets"),
             file_data=f.read(),
             file_name=file_name,
             file_field="assetData",
@@ -171,9 +175,12 @@ def download_people_thumbnail(url: str, token: str, person_id: str) -> str:
         return file_path
 
     response = http.get(
-        url=urljoin(url, f"/api/people/{person_id}/thumbnail"),
+        url=api_url(url, f"/api/people/{person_id}/thumbnail"),
         headers={"Authorization": f"Bearer {token}"},
     )
+    if response.status_code == 404:
+        return ""
+
     response.raise_for_status()
     data = response.data
     with open(file_path, "wb+") as f:
@@ -202,7 +209,7 @@ def get_bucket(url: str, token: str, current: str, query_params: Dict[str, str] 
             return Bucket(current=final_current, next=next_, previous=previous)
         else:
             response = http.get(
-                url=urljoin(url, "/api/timeline/buckets"),
+                url=api_url(url, "/api/timeline/buckets"),
                 headers={"Authorization": f"Bearer {token}"},
                 params=query_params,
             )
@@ -265,7 +272,7 @@ def metadata_search(url: str, token: str, query_params: Dict[str, Any], page: st
         final_page = page
 
     response = http.post(
-        url=urljoin(url, "/api/search/metadata"),
+        url=api_url(url, "/api/search/metadata"),
         headers={"Authorization": f"Bearer {token}"},
         json={"page": final_page, **query_params},
     )
@@ -298,7 +305,7 @@ def smart_search(url: str, token: str, query: str, page: str = "") -> SearchResp
         final_page = page
 
     response = http.post(
-        url=urljoin(url, "/api/search/smart"),
+        url=api_url(url, "/api/search/smart"),
         headers={"Authorization": f"Bearer {token}"},
         json={"page": final_page, "query": query},
     )
@@ -356,7 +363,7 @@ def asset_info(image_id: str) -> AssetInfo:
 
         if not file_name or not file_type or favorite is None or archived is None or deleted is None:
             metadata_response = http.get(
-                urljoin(url, f"/api/assets/{image_id}"),
+                api_url(url, f"/api/assets/{image_id}"),
                 headers={"Authorization": f"Bearer {token}"},
             )
             metadata_response.raise_for_status()

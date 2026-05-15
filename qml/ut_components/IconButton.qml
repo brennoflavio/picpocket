@@ -17,6 +17,15 @@
  * }
  * \endqml
  *
+ * Example usage with a custom SVG source:
+ * \qml
+ * IconButton {
+ *     iconSource: Qt.resolvedUrl("../assets/logo.svg")
+ *     text: "Brand"
+ *     onClicked: pageStack.push(brandPage)
+ * }
+ * \endqml
+ *
  * Example usage with icon and text:
  * \qml
  * IconButton {
@@ -27,7 +36,8 @@
  * \endqml
  *
  * Properties:
- * - iconName (string): The name of the icon to display (default: "settings")
+ * - iconName (string): The theme icon name used when iconSource is empty (default: "settings")
+ * - iconSource (url): Optional custom icon file URL that takes precedence over iconName (default: "")
  * - text (string): Optional text label to display below the icon (default: "")
  *
  * Signals:
@@ -56,6 +66,8 @@ Item {
     id: iconButton
 
     property string iconName: "settings"
+    property url iconSource: ""
+    readonly property bool hasIconSource: iconSource.toString() !== ""
     property string text: ""
 
     signal clicked()
@@ -99,7 +111,8 @@ Item {
         anchors.horizontalCenter: text ? parent.horizontalCenter : undefined
         anchors.top: text ? parent.top : undefined
         anchors.topMargin: text ? units.gu(0.75) : 0
-        name: iconButton.iconName
+        source: iconButton.hasIconSource ? iconButton.iconSource : ""
+        name: iconButton.hasIconSource ? "" : iconButton.iconName
         width: units.gu(2.5)
         height: units.gu(2.5)
         color: theme.palette.normal.backgroundText

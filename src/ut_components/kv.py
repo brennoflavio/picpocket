@@ -277,6 +277,77 @@ class KV:
         result = self.cursor.fetchall()
         return [(x[0], self._decode_value(x[1])) for x in result]
 
+    def get_partial_page(
+        self,
+        beginning: str,
+        page_size: int = 50,
+        cursor: Optional[str] = None,
+        reverse: bool = False,
+    ) -> Tuple[List[Tuple[str, Any]], Optional[str]]:
+        """
+        Retrieve a page of key-value pairs where keys start with a given prefix.
+
+        Performs cursor-based pagination over keys matching the prefix, sorted
+        by key. Supports both forward (ascending) and reverse (descending)
+        traversal. Unlike get_partial(), which loads all matching entries,
+        this method fetches only one page at a time.
+
+        Args:
+            beginning (str): The prefix to search for. All keys starting with
+                this string will be considered.
+            page_size (int): Maximum number of entries to return per page.
+                Defaults to 50.
+            cursor (Optional[str]): The cursor returned from a previous call.
+                Pass None to start from the beginning (or end, if reverse).
+                Defaults to None.
+            reverse (bool): If True, return results in descending key order
+                (newest first when keys encode timestamps). Defaults to False.
+
+        Returns:
+            Tuple[List[Tuple[str, Any]], Optional[str]]: A tuple of
+            (results, next_cursor). results is a list of (key, value) tuples.
+            next_cursor is the key to pass as cursor for the next page, or
+            None if there are no more pages.
+
+        Example:
+            >>> with KV() as kv:
+            ...     # Forward pagination
+            ...     results, cursor = kv.get_partial_page("user:", page_size=10)
+            ...     while cursor:
+            ...         more, cursor = kv.get_partial_page("user:", page_size=10, cursor=cursor)
+            ...         results.extend(more)
+            >>>
+            >>> with KV() as kv:
+            ...     # Reverse pagination (newest first)
+            ...     results, cursor = kv.get_partial_page("msg:chat1:", page_size=50, reverse=True)
+            ...     if cursor:
+            ...         older, cursor = kv.get_partial_page("msg:chat1:", page_size=50, cursor=cursor, reverse=True)
+        """
+        now_seconds = int(datetime.now().timestamp())
+
+        conditions = ["key LIKE ? || '%'", "(ttl IS NULL OR ttl > ?)"]
+        params: list = [beginning, now_seconds]
+
+        if cursor is not None:
+            if reverse:
+                conditions.append("key < ?")
+            else:
+                conditions.append("key > ?")
+            params.append(cursor)
+
+        order = "DESC" if reverse else "ASC"
+        params.append(page_size)
+
+        sql = f"SELECT key, value FROM kv WHERE {' AND '.join(conditions)} ORDER BY key {order} LIMIT ?"
+
+        self.cursor.execute(sql, params)
+        rows = self.cursor.fetchall()
+        results = [(row[0], self._decode_value(row[1])) for row in rows]
+
+        next_cursor = results[-1][0] if len(results) == page_size else None
+
+        return results, next_cursor
+
     def delete(self, key: str) -> None:
         """
         Delete a specific key-value pair from the database.

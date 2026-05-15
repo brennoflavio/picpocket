@@ -44,6 +44,21 @@ import QtQuick.Layouts 1.3
  * }
  * \endqml
  *
+ * Example usage with custom icon sources:
+ * \qml
+ * ActionableList {
+ *     items: [
+ *         {
+ *             title: "Branded Item",
+ *             iconSource: Qt.resolvedUrl("../assets/logo.svg"),
+ *             customActions: [
+ *                 { id: "open", iconSource: Qt.resolvedUrl("../assets/logo.svg"), text: "Open" }
+ *             ]
+ *         }
+ *     ]
+ * }
+ * \endqml
+ *
  * Example usage with actions:
  * \qml
  * ActionableList {
@@ -83,7 +98,7 @@ Column {
     /*!
      * Array of items to display in the list.
      * Each item should have at minimum a 'title' property.
-     * Optional properties: subtitle, icon, customActions, actionData
+     * Optional properties: subtitle, icon, iconSource, customActions, actionData
      */
     property var items: []
     //! Whether to show the search bar above the list
@@ -100,7 +115,7 @@ Column {
     property var searchFields: ["title"]
     /*!
      * Global actions applied to all items (unless overridden by item.customActions).
-     * Each action object should have: id, iconName, text (optional), enabled (optional), visible (optional)
+     * Each action object should have: id, iconName/iconSource, text (optional), enabled (optional), visible (optional)
      */
     property var itemActions: []
     //! Property name used as unique identifier for items (used internally)
@@ -195,6 +210,8 @@ Column {
             property string title: modelData.title || ""
             property string subtitle: modelData.subtitle || ""
             property string leadingIcon: modelData.icon || ""
+            property url leadingIconSource: modelData.iconSource || ""
+            readonly property bool hasLeadingIconSource: leadingIconSource.toString() !== ""
             property var actions: modelData.customActions && modelData.customActions.length > 0 ? modelData.customActions : actionableList.itemActions
 
             width: parent ? parent.width : 0
@@ -214,13 +231,14 @@ Column {
                     }
 
                     Loader {
-                        active: listItemDelegate.leadingIcon !== ""
+                        active: listItemDelegate.leadingIcon !== "" || listItemDelegate.hasLeadingIconSource
                         Layout.preferredWidth: units.gu(3)
                         Layout.preferredHeight: units.gu(3)
                         Layout.alignment: Qt.AlignVCenter
 
                         sourceComponent: Icon {
-                            name: listItemDelegate.leadingIcon
+                            source: listItemDelegate.hasLeadingIconSource ? listItemDelegate.leadingIconSource : ""
+                            name: listItemDelegate.hasLeadingIconSource ? "" : listItemDelegate.leadingIcon
                             width: units.gu(3)
                             height: units.gu(3)
                             color: theme.palette.normal.foregroundText
@@ -264,6 +282,8 @@ Column {
                         Layout.alignment: Qt.AlignVCenter
 
                         Repeater {
+                            id: actionsRepeater
+
                             model: {
                                 var visibleActions = [];
                                 for (var i = 0; i < listItemDelegate.actions.length; i++) {
@@ -277,6 +297,7 @@ Column {
 
                             delegate: IconButton {
                                 iconName: modelData.iconName || "settings"
+                                iconSource: modelData.iconSource || ""
                                 text: modelData.text || ""
                                 enabled: modelData.enabled === undefined || modelData.enabled === true
                                 onClicked: {
@@ -298,7 +319,7 @@ Column {
                     id: itemMouseArea
 
                     anchors.fill: parent
-                    enabled: actionsRow.children.length === 0
+                    enabled: actionsRepeater.count === 0
                     onClicked: actionableList.itemClicked(listItemDelegate.itemData)
                 }
 

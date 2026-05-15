@@ -45,6 +45,16 @@ import QtQuick.Layouts 1.3
  * }
  * \endqml
  *
+ * Example usage with a custom icon source:
+ * \qml
+ * CardList {
+ *     height: units.gu(30)
+ *     items: [
+ *         { title: "Branded Item", subtitle: "Uses SVG", iconSource: Qt.resolvedUrl("../assets/logo.svg") }
+ *     ]
+ * }
+ * \endqml
+ *
  * Example usage with search:
  * \qml
  * CardList {
@@ -57,7 +67,7 @@ import QtQuick.Layouts 1.3
  * \endqml
  *
  * Properties:
- * - items (array): Array of objects containing card data (title, subtitle, icon, thumbnailSource)
+ * - items (array): Array of objects containing card data (title, subtitle, icon, iconSource, thumbnailSource)
  * - emptyMessage (string): Message displayed when items array is empty (default: "No items")
  * - showSearchBar (bool): Whether to show the search bar (default: false)
  * - searchPlaceholder (string): Placeholder text for search field (default: "Search")
@@ -136,6 +146,13 @@ Column {
             delegate: Item {
                 id: cardDelegate
 
+                readonly property string thumbnailSource: modelData.thumbnailSource || ""
+                readonly property string iconName: modelData.icon || ""
+                readonly property url iconSource: modelData.iconSource || ""
+                readonly property bool hasThumbnail: thumbnailSource !== ""
+                readonly property bool hasIconSource: iconSource.toString() !== ""
+                readonly property bool hasIcon: hasIconSource || iconName !== ""
+
                 width: parent.width - units.gu(4)
                 height: units.gu(10)
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -173,7 +190,7 @@ Column {
                                 id: thumbnail
 
                                 anchors.fill: parent
-                                source: modelData.thumbnailSource || ""
+                                source: cardDelegate.thumbnailSource
                                 fillMode: Image.PreserveAspectCrop
                                 visible: false
                             }
@@ -190,16 +207,17 @@ Column {
                                 anchors.fill: parent
                                 source: thumbnail
                                 maskSource: mask
-                                visible: (!!modelData.thumbnailSource) && !modelData.icon
+                                visible: cardDelegate.hasThumbnail
                             }
 
                             Icon {
                                 anchors.centerIn: parent
-                                name: modelData.icon || "dialog-question-symbolic"
+                                source: cardDelegate.hasIconSource ? cardDelegate.iconSource : ""
+                                name: cardDelegate.hasIcon ? (cardDelegate.hasIconSource ? "" : cardDelegate.iconName) : "dialog-question-symbolic"
                                 width: units.gu(4)
                                 height: units.gu(4)
                                 color: theme.palette.normal.backgroundSecondaryText
-                                visible: (!!modelData.icon) || (!modelData.thumbnailSource && !modelData.icon)
+                                visible: !cardDelegate.hasThumbnail
                             }
 
                         }

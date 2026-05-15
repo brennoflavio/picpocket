@@ -15,11 +15,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Any, Dict, List, Optional, Union
 
 from . import http
+
+
+@dataclass
+class Vibrate:
+    pattern: List[int]
+    repeat: int = 1
+
+
+@dataclass
+class EmblemCounter:
+    count: int
+    visible: bool
+
+
+NotificationSound = Union[bool, str]
+NotificationVibrate = Union[bool, Vibrate]
 
 
 @dataclass
@@ -30,38 +46,6 @@ class Notification:
     This dataclass encapsulates all properties needed to create and send
     push notifications through the Ubuntu Push Notification Service.
     It provides methods for serialization to the required format.
-
-    Attributes:
-        icon (str): The icon name or path to display with the notification.
-            Should be a valid icon from the system theme or app resources.
-        summary (str): The title or summary text shown in the notification header.
-        body (str): The main content/message of the notification.
-        popup (bool): Whether to display the notification as a popup overlay.
-        persist (bool): Whether the notification should persist in the notification
-            drawer until explicitly dismissed by the user.
-        vibrate (bool): Whether to trigger device vibration when the notification
-            is received (subject to user settings).
-        sound (bool): Whether to play a notification sound when received
-            (subject to user settings).
-
-    Example:
-        >>> from src.ut_components.notification import Notification
-        >>>
-        >>> # Create a simple notification
-        >>> notification = Notification(
-        ...     icon="dialog-information",
-        ...     summary="New Message",
-        ...     body="You have received a new message from John",
-        ...     popup=True,
-        ...     persist=True,
-        ...     vibrate=True,
-        ...     sound=True
-        ... )
-        >>>
-        >>> # Convert to Ubuntu Push format
-        >>> push_data = notification.dict()
-        >>> # Or get JSON string
-        >>> json_str = notification.dump()
     """
 
     icon: str
@@ -69,26 +53,87 @@ class Notification:
     body: str
     popup: bool
     persist: bool
-    vibrate: bool
-    sound: bool
+    vibrate: NotificationVibrate
+    sound: NotificationSound
+    actions: List[str] = field(default_factory=list)
+    timestamp: Optional[int] = None
+    tag: str = ""
+    emblem_counter: Optional[EmblemCounter] = None
 
-    def dict(self) -> Dict:
-        return {
-            "notification": {
-                "card": {
-                    "icon": self.icon,
-                    "summary": self.summary,
-                    "body": self.body,
-                    "popup": self.popup,
-                    "persist": self.persist,
-                },
-                "vibrate": self.vibrate,
-                "sound": self.sound,
-            }
+    def dict(self) -> Dict[str, Any]:
+        card = {
+            "icon": self.icon,
+            "summary": self.summary,
+            "body": self.body,
+            "popup": self.popup,
+            "persist": self.persist,
         }
+        if self.actions:
+            card["actions"] = list(self.actions)
+        if self.timestamp is not None:
+            card["timestamp"] = self.timestamp
+
+        notification = {
+            "card": card,
+            "vibrate": _serialize_vibrate(self.vibrate),
+            "sound": self.sound,
+        }
+        if self.tag:
+            notification["tag"] = self.tag
+        if self.emblem_counter is not None:
+            notification["emblem-counter"] = _serialize_emblem_counter(self.emblem_counter)
+
+        return {"notification": notification}
 
     def dump(self) -> str:
         return json.dumps(self.dict())
+
+
+def _serialize_vibrate(vibrate: NotificationVibrate) -> Union[bool, Dict[str, Any]]:
+    if isinstance(vibrate, Vibrate):
+        return {
+            "pattern": list(vibrate.pattern),
+            "repeat": vibrate.repeat,
+        }
+    return vibrate
+
+
+def _serialize_emblem_counter(emblem_counter: EmblemCounter) -> Dict[str, Any]:
+    return {
+        "count": emblem_counter.count,
+        "visible": emblem_counter.visible,
+    }
+
+
+def _parse_vibrate(value: Any) -> NotificationVibrate:
+    if isinstance(value, dict):
+        pattern = value.get("pattern")
+        repeat = value.get("repeat", 1)
+        if isinstance(pattern, list):
+            parsed_pattern = [item for item in pattern if isinstance(item, int) and not isinstance(item, bool)]
+            parsed_repeat = repeat if isinstance(repeat, int) and not isinstance(repeat, bool) else 1
+            return Vibrate(pattern=parsed_pattern, repeat=parsed_repeat)
+    if isinstance(value, bool):
+        return value
+    return False
+
+
+def _parse_emblem_counter(value: Any) -> Optional[EmblemCounter]:
+    if not isinstance(value, dict):
+        return None
+
+    count = value.get("count", 0)
+    if not isinstance(count, int) or isinstance(count, bool):
+        count = 0
+
+    visible = value.get("visible", False)
+    if not isinstance(visible, bool):
+        visible = False
+
+    return EmblemCounter(
+        count=count,
+        visible=visible,
+    )
 
 
 def parse_notification(raw_notification: str) -> Notification:
@@ -98,51 +143,36 @@ def parse_notification(raw_notification: str) -> Notification:
     Deserializes a JSON-formatted push notification string (typically received
     from the Ubuntu Push Notification Service) into a Notification dataclass
     instance. Provides sensible defaults for any missing fields.
-
-    Args:
-        raw_notification (str): A JSON string containing the notification data
-            in Ubuntu Push format. Should have a structure with "notification"
-            containing "card" and vibrate/sound settings.
-
-    Returns:
-        Notification: A Notification object populated with the parsed data.
-            Missing fields will use defaults: icon="notification", empty strings
-            for text fields, and False for boolean flags.
-
-    Example:
-        >>> from src.ut_components.notification import parse_notification
-        >>> import json
-        >>>
-        >>> # Parse a notification from JSON
-        >>> json_data = '''
-        ... {
-        ...     "notification": {
-        ...         "card": {
-        ...             "icon": "message-new",
-        ...             "summary": "Alert",
-        ...             "body": "Important update available",
-        ...             "popup": true,
-        ...             "persist": false
-        ...         },
-        ...         "vibrate": true,
-        ...         "sound": false
-        ...     }
-        ... }
-        ... '''
-        >>> notification = parse_notification(json_data)
-        >>> print(notification.summary)  # Output: "Alert"
     """
     data = json.loads(raw_notification)
     notification = data.get("notification", {})
     card = notification.get("card", {})
+
+    actions = card.get("actions", [])
+    if not isinstance(actions, list):
+        actions = []
+    actions = [action for action in actions if isinstance(action, str)]
+
+    timestamp = card.get("timestamp")
+    if not isinstance(timestamp, int) or isinstance(timestamp, bool):
+        timestamp = None
+
+    sound = notification.get("sound", False)
+    if not isinstance(sound, (bool, str)):
+        sound = False
+
     return Notification(
         icon=card.get("icon", "notification"),
         summary=card.get("summary", ""),
         body=card.get("body", ""),
         popup=card.get("popup", False),
         persist=card.get("persist", False),
-        vibrate=notification.get("vibrate", False),
-        sound=notification.get("sound", False),
+        vibrate=_parse_vibrate(notification.get("vibrate", False)),
+        sound=sound,
+        actions=actions,
+        timestamp=timestamp,
+        tag=str(notification.get("tag", "") or ""),
+        emblem_counter=_parse_emblem_counter(notification.get("emblem-counter")),
     )
 
 

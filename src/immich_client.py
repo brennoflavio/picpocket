@@ -28,11 +28,12 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
+from json import JSONDecodeError
 from typing import Dict, List, Optional
-from urllib.parse import urljoin
 
 import src.ut_components.http as http
 from src.immich_utils import (
+    api_url,
     asset_info,
     delete_asset_info,
     delete_buckets,
@@ -75,7 +76,7 @@ def should_login() -> bool:
         return True
 
     response = http.post(
-        url=urljoin(url, "/api/auth/validateToken"),
+        url=api_url(url, "/api/auth/validateToken"),
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -87,12 +88,28 @@ def should_login() -> bool:
 @crash_reporter
 @dataclass_to_dict
 def login(url: str, email: str, password: str) -> ImmichResponse:
-    response = http.post(url=urljoin(url, "/api/auth/login"), json={"email": email, "password": password})
-    json_response = response.json()
+    response = http.post(url=api_url(url, "/api/auth/login"), json={"email": email, "password": password})
+
+    try:
+        json_response = response.json()
+    except JSONDecodeError:
+        if response.status_code == 404:
+            return ImmichResponse(success=False, message="Login endpoint not found. Check the server URL")
+        if response.status_code == 0:
+            return ImmichResponse(success=False, message=response.text or "Unable to connect to server")
+        return ImmichResponse(
+            success=False,
+            message=f"Server returned an invalid response (status {response.status_code})",
+        )
+
     if not response.success:
-        return ImmichResponse(success=False, message=json_response.get("error", "Unknown error"))
+        return ImmichResponse(
+            success=False, message=json_response.get("error") or json_response.get("message", "Unknown error")
+        )
 
     token = json_response.get("accessToken")
+    if not token:
+        return ImmichResponse(success=False, message="Server did not return a login token")
 
     with KV() as kv:
         kv.put_cached("immich.url", url)
@@ -147,7 +164,7 @@ def base_timeline(prefix: str, bucket: str = "", query_args: Dict[str, str] = {}
             )
 
         response = http.get(
-            url=urljoin(url, "/api/timeline/bucket"),
+            url=api_url(url, "/api/timeline/bucket"),
             headers={"Authorization": f"Bearer {token}"},
             params={"timeBucket": bucket_obj.current, **query_args},
         )
@@ -250,7 +267,7 @@ def favorite(image_id: str, favorite: bool):
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, f"/api/assets/{image_id}"),
+            url=api_url(url, f"/api/assets/{image_id}"),
             json={"isFavorite": favorite},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -271,7 +288,7 @@ def archive(*image_ids: str):
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, "/api/assets"),
+            url=api_url(url, "/api/assets"),
             json={"ids": list(image_ids), "visibility": "archive"},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -289,7 +306,7 @@ def delete(*image_ids: str):
             raise ValueError("Missing URL or token")
 
         response = http.delete(
-            url=urljoin(url, "/api/assets"),
+            url=api_url(url, "/api/assets"),
             json={"ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -357,7 +374,7 @@ def memories() -> MemoryContainer:
             raise ValueError("Missing URL or token")
 
         response = http.get(
-            url=urljoin(url, "/api/memories"),
+            url=api_url(url, "/api/memories"),
             params={"for": datetime.now().isoformat()},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -439,7 +456,7 @@ def albums():
             raise ValueError("Missing URL or token")
 
         response = http.get(
-            url=urljoin(url, "/api/albums"),
+            url=api_url(url, "/api/albums"),
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -498,7 +515,7 @@ def album_detail(album_id: str) -> TimelineResponse:
             raise ValueError("Missing URL or token")
 
         response = http.get(
-            url=urljoin(url, f"/api/albums/{album_id}"),
+            url=api_url(url, f"/api/albums/{album_id}"),
             params={"withoutAssets": "false"},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -619,7 +636,7 @@ def people() -> PeopleResponse:
             raise ValueError("Missing URL or token")
 
         response = http.get(
-            url=urljoin(url, "/api/people"),
+            url=api_url(url, "/api/people"),
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -694,7 +711,7 @@ def locations() -> LocationResponse:
             raise ValueError("Missing URL or token")
 
         response = http.get(
-            url=urljoin(url, "/api/search/cities"),
+            url=api_url(url, "/api/search/cities"),
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -859,7 +876,7 @@ def unarchive(*image_ids: str):
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, "/api/assets"),
+            url=api_url(url, "/api/assets"),
             json={"ids": list(image_ids), "visibility": "timeline"},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -903,7 +920,7 @@ def undelete(*image_ids: str):
             raise ValueError("Missing URL or token")
 
         response = http.post(
-            url=urljoin(url, "/api/trash/restore/assets"),
+            url=api_url(url, "/api/trash/restore/assets"),
             json={"ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -922,7 +939,7 @@ def permanently_delete(*image_ids: str):
             raise ValueError("Missing URL or token")
 
         response = http.delete(
-            url=urljoin(url, "/api/assets"),
+            url=api_url(url, "/api/assets"),
             json={"force": "true", "ids": list(image_ids)},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1015,7 +1032,7 @@ def add_album(name: str = "") -> ImmichResponse:
             raise ValueError("Missing URL or token")
 
         response = http.post(
-            url=urljoin(url, "/api/albums"),
+            url=api_url(url, "/api/albums"),
             json={"albumName": name},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1034,7 +1051,7 @@ def delete_album(album_id: str) -> ImmichResponse:
             raise ValueError("Missing URL or token")
 
         response = http.delete(
-            url=urljoin(url, f"/api/albums/{album_id}"),
+            url=api_url(url, f"/api/albums/{album_id}"),
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -1053,7 +1070,7 @@ def add_assets_to_album(album_id: str, asset_ids: List[str]) -> ImmichResponse:
             raise ValueError("Missing URL or token")
 
         response = http.put(
-            url=urljoin(url, f"/api/albums/{album_id}/assets"),
+            url=api_url(url, f"/api/albums/{album_id}/assets"),
             headers={"Authorization": f"Bearer {token}"},
             json={"ids": asset_ids},
         )
@@ -1073,7 +1090,7 @@ def delete_assets_to_album(album_id: str, asset_ids: List[str]) -> ImmichRespons
             raise ValueError("Missing URL or token")
 
         response = http.delete(
-            url=urljoin(url, f"/api/albums/{album_id}/assets"),
+            url=api_url(url, f"/api/albums/{album_id}/assets"),
             headers={"Authorization": f"Bearer {token}"},
             json={"ids": asset_ids},
         )
