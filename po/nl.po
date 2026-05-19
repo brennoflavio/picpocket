@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-29 20:01+0000\n"
-"PO-Revision-Date: 2026-05-13 17:11+0000\n"
+"PO-Revision-Date: 2026-05-20 18:11+0000\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/ubports/picpocket/"
 "nl/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.5.dev0\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -463,7 +463,7 @@ msgstr "Instellingen"
 
 #: ../qml/ut_components/Form.qml:67
 msgid "Submit"
-msgstr "Indienen"
+msgstr "Toevoegen"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
