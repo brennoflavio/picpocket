@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-29 20:01+0000\n"
+"POT-Creation-Date: 2026-05-15 04:26+0000\n"
 "PO-Revision-Date: 2026-05-12 15:11+0000\n"
 "Last-Translator: \"Хмеляускас Александр (JasonWalt Bab@)\" "
 "<mardimusa8@gmail.com>\n"
@@ -60,7 +60,7 @@ msgstr ""
 
 #: ../qml/AlbumDetailPage.qml:181 ../qml/FavoritesPage.qml:164
 #: ../qml/GalleryPage.qml:239 ../qml/LocationDetailPage.qml:143
-#: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:564
+#: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:227
 #: ../qml/SearchPage.qml:227
 msgid "Archive"
 msgstr ""
@@ -75,7 +75,7 @@ msgstr ""
 #: ../qml/FavoritesPage.qml:188 ../qml/GalleryPage.qml:263
 #: ../qml/LibraryPage.qml:46 ../qml/LibraryPage.qml:70
 #: ../qml/LocationDetailPage.qml:167 ../qml/PersonDetailPage.qml:180
-#: ../qml/PhotoDetail.qml:578 ../qml/SearchPage.qml:251
+#: ../qml/PhotoDetail.qml:241 ../qml/SearchPage.qml:251
 msgid "Trash"
 msgstr ""
 
@@ -155,7 +155,7 @@ msgstr ""
 msgid "Loading archived photos..."
 msgstr ""
 
-#: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:564
+#: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:227
 msgid "Unarchive"
 msgstr ""
 
@@ -203,7 +203,7 @@ msgstr ""
 msgid "Loading deleted photos..."
 msgstr ""
 
-#: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:592
+#: ../qml/DeletedPhotosPage.qml:145 ../qml/PhotoDetail.qml:255
 msgid "Restore"
 msgstr ""
 
@@ -211,7 +211,7 @@ msgstr ""
 msgid "Restoring photos..."
 msgstr ""
 
-#: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:606
+#: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:269
 msgid "Delete"
 msgstr ""
 
@@ -275,8 +275,8 @@ msgid "OK"
 msgstr ""
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
-#: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:92
-#: ../qml/ut_components/CardList.qml:74
+#: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:107
+#: ../qml/ut_components/CardList.qml:84
 msgid "Search"
 msgstr ""
 
@@ -404,27 +404,19 @@ msgstr ""
 msgid "Error loading person photos"
 msgstr ""
 
-#: ../qml/PhotoDetail.qml:56
+#: ../qml/PhotoDetail.qml:110
 msgid "Immich photos viewed today"
 msgstr ""
 
-#: ../qml/PhotoDetail.qml:57
+#: ../qml/PhotoDetail.qml:111
 msgid "No Immich photos viewed today"
 msgstr ""
 
-#: ../qml/PhotoDetail.qml:421
-msgid "Failed to load image"
-msgstr ""
-
-#: ../qml/PhotoDetail.qml:475
-msgid "Failed to load video"
-msgstr ""
-
-#: ../qml/PhotoDetail.qml:536 ../qml/PhotoDetail.qml:629
+#: ../qml/PhotoDetail.qml:198 ../qml/PhotoDetail.qml:331
 msgid "Share"
 msgstr ""
 
-#: ../qml/PhotoDetail.qml:554
+#: ../qml/PhotoDetail.qml:216
 msgid "Favorite"
 msgstr ""
 
@@ -452,8 +444,8 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#: ../qml/ut_components/ActionableList.qml:94
-#: ../qml/ut_components/CardList.qml:72
+#: ../qml/ut_components/ActionableList.qml:109
+#: ../qml/ut_components/CardList.qml:82
 msgid "No items"
 msgstr ""
 
@@ -467,8 +459,16 @@ msgstr "Bumalik"
 msgid "Settings"
 msgstr "Mga Setting"
 
-#: ../qml/ut_components/Form.qml:67
+#: ../qml/ut_components/Form.qml:81
 msgid "Submit"
+msgstr ""
+
+#: ../qml/ut_components/ImageViewer.qml:388
+msgid "Failed to load image"
+msgstr ""
+
+#: ../qml/ut_components/ImageViewer.qml:483
+msgid "No image to display"
 msgstr ""
 
 #: ../qml/ut_components/InputField.qml:91
@@ -477,4 +477,12 @@ msgstr ""
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:438
+msgid "Failed to load video"
+msgstr ""
+
+#: ../qml/ut_components/VideoViewer.qml:640
+msgid "No video to display"
 msgstr ""
