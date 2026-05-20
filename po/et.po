@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-15 04:26+0000\n"
-"PO-Revision-Date: 2026-04-20 14:09+0000\n"
+"PO-Revision-Date: 2026-05-21 21:11+0000\n"
 "Last-Translator: Priit Jõerüüt <jrthwlate@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/ubports/"
 "picpocket/et/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17.1-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -463,7 +463,7 @@ msgstr "Pildi laadimine ei õnnestunud"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "Pole kuvatavat pilti"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
@@ -479,4 +479,4 @@ msgstr "Video laadimine ei õnnestunud"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "Pole kuvatavat videot"
