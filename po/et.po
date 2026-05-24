@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-15 04:26+0000\n"
-"PO-Revision-Date: 2026-05-21 21:11+0000\n"
+"PO-Revision-Date: 2026-05-25 11:12+0000\n"
 "Last-Translator: Priit Jõerüüt <jrthwlate@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/ubports/"
 "picpocket/et/>\n"
@@ -414,7 +414,7 @@ msgstr "Jaga"
 
 #: ../qml/PhotoDetail.qml:216
 msgid "Favorite"
-msgstr "Lisa lemmikuks"
+msgstr "Lemmik"
 
 #: ../qml/SearchPage.qml:49
 msgid "Searching..."
