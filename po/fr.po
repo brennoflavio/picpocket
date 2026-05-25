@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-15 04:26+0000\n"
-"PO-Revision-Date: 2026-05-12 15:11+0000\n"
-"Last-Translator: Vlad Nirky <nirky.vlad@protonmail.com>\n"
+"PO-Revision-Date: 2026-05-26 21:11+0000\n"
+"Last-Translator: libermax <libremax@protonmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/ubports/picpocket/"
 "fr/>\n"
 "Language: fr\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.5-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -463,7 +463,7 @@ msgstr "Échec de chargement d'image"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "Aucune image à afficher"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
@@ -479,4 +479,4 @@ msgstr "Échec de chargement de vidéo"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "Aucune vidéo à afficher"
