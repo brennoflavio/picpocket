@@ -10,18 +10,47 @@ permissions:
 env:
   RELEASE_REPO_BRANCH: master
   CLICKABLE_FRAMEWORK: ubuntu-touch-24.04-1.x
-  CLICKABLE_IMAGE: clickable/ci-ut24.04-1.x-amd64:latest
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: clickable-ut24-1x
 
     steps:
+      - name: Install Node.js for JavaScript actions
+        run: |
+          set -eu
+          case "$(uname -m)" in
+            x86_64) NODE_ARCH=x64 ;;
+            aarch64) NODE_ARCH=arm64 ;;
+            *)
+              echo "Unsupported architecture: $(uname -m)"
+              exit 1
+              ;;
+          esac
+          NODE_VERSION=v20.19.2
+          NODE_FILENAME="node-$NODE_VERSION-linux-$NODE_ARCH.tar.gz"
+          NODE_DIR="$HOME/.local/node-$NODE_VERSION"
+          curl -fsSL "https://nodejs.org/dist/$NODE_VERSION/$NODE_FILENAME" -o "/tmp/$NODE_FILENAME"
+          curl -fsSL "https://nodejs.org/dist/$NODE_VERSION/SHASUMS256.txt" -o /tmp/SHASUMS256.txt
+          cd /tmp
+          grep " $NODE_FILENAME$" SHASUMS256.txt | sha256sum -c -
+          mkdir -p "$NODE_DIR"
+          tar -xzf "/tmp/$NODE_FILENAME" -C "$NODE_DIR" --strip-components=1
+          export PATH="$NODE_DIR/bin:$PATH"
+          echo "$NODE_DIR/bin" >> "$GITHUB_PATH"
+
       - name: Checkout release branch
         uses: https://code.forgejo.org/actions/checkout@v4
         with:
           ref: ${{ env.RELEASE_REPO_BRANCH }}
           persist-credentials: false
+
+      - name: Verify runner tooling
+        run: |
+          set -eu
+          node --version
+          clickable --version
+          docker info >/dev/null
 
       - name: Capture last commit message
         id: commit
@@ -34,78 +63,14 @@ jobs:
             echo "${delimiter}"
           } >> "${FORGEJO_OUTPUT:-$GITHUB_OUTPUT}"
 
-      - name: Pull Clickable
-        run: docker pull "${CLICKABLE_IMAGE}"
-
-      - name: Debug workspace
-        run: |
-          set -eu
-          echo "Runner workspace: $(pwd)"
-          echo "Resolved workspace path: $(readlink -f .)"
-          echo
-          echo "Environment:"
-          env | sort
-          echo
-          echo "Top-level filesystem:"
-          ls -la /
-          echo
-          for path in . /data /data/workspaces /workspace /github /github/workspace; do
-            echo "== Listing $path =="
-            if [ -e "$path" ]; then
-              ls -la "$path"
-            else
-              echo "missing"
-            fi
-            echo
-          done
-          echo "Mount info:"
-          cat /proc/self/mountinfo
-          echo
-          echo "clickable.yaml contents from current directory:"
-          cat clickable.yaml
-
-      - name: Debug Docker daemon paths
-        run: |
-          set -eu
-          echo "Docker version:"
-          docker version
-          echo
-          echo "Docker info:"
-          docker info
-          echo
-          for path in /data /data/workspaces /workspace /github/workspace; do
-            echo "== Daemon path probe: $path =="
-            docker run --rm -v "$path:/probe" alpine:3.20 sh -c 'ls -la /probe || true; echo; find /probe -maxdepth 2 -mindepth 1 | head -50 || true'
-            echo
-          done
-          current_path=$(readlink -f .)
-          echo "== Daemon current workspace probe: $current_path =="
-          docker run --rm -v "$current_path:/probe" alpine:3.20 sh -c 'ls -la /probe || true; echo; find /probe -maxdepth 2 -mindepth 1 | head -50 || true'
-
       - name: Build
-        run: |
-          set -eu
-          current_path=$(readlink -f .)
-          docker run \
-            --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
-            --volume "$current_path:/app" \
-            "${CLICKABLE_IMAGE}" \
-            bash -c 'set -eu; echo "Container workspace: $(pwd)"; echo; echo "Container top-level filesystem:"; ls -la /; echo; cd /app; echo "Mounted app directory:"; ls -la; echo; echo "clickable.yaml contents:"; cat clickable.yaml; echo; clickable build'
+        run: clickable build
 
       - name: Deploy
         env:
           OPENSTORE_API_KEY: ${{ secrets.OPENSTORE_API_KEY }}
           RELEASE_MESSAGE: ${{ steps.commit.outputs.message }}
-        run: |
-          set -eu
-          current_path=$(readlink -f .)
-          docker run \
-            --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
-            --env OPENSTORE_API_KEY="${OPENSTORE_API_KEY}" \
-            --env RELEASE_MESSAGE="${RELEASE_MESSAGE}" \
-            --volume "$current_path:/app" \
-            "${CLICKABLE_IMAGE}" \
-            bash -c 'cd /app && clickable publish -- "$RELEASE_MESSAGE"'
+        run: clickable publish -- "$RELEASE_MESSAGE"
 
 concurrency:
   group: release-picpocket-master
