@@ -1,0 +1,63 @@
+name: Release Picpocket
+enable-email-notifications: true
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_REPO_BRANCH: master
+  CLICKABLE_FRAMEWORK: ubuntu-touch-24.04-1.x
+  CLICKABLE_IMAGE: clickable/ci-ut24.04-1.x-amd64:latest
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release branch
+        uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REPO_BRANCH }}
+          persist-credentials: false
+
+      - name: Capture last commit message
+        id: commit
+        run: |
+          message=$(git log -1 --pretty=%B)
+          delimiter=$(python3 -c 'import uuid; print(uuid.uuid4())')
+          {
+            echo "message<<${delimiter}"
+            echo "$message"
+            echo "${delimiter}"
+          } >> "${FORGEJO_OUTPUT:-$GITHUB_OUTPUT}"
+
+      - name: Pull Clickable
+        run: docker pull "${CLICKABLE_IMAGE}"
+
+      - name: Build
+        run: |
+          docker run \
+            --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
+            --volume ./:/app \
+            "${CLICKABLE_IMAGE}" \
+            bash -c "cd /app && clickable build"
+
+      - name: Deploy
+        env:
+          OPENSTORE_API_KEY: ${{ secrets.OPENSTORE_API_KEY }}
+          RELEASE_MESSAGE: ${{ steps.commit.outputs.message }}
+        run: |
+          docker run \
+            --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
+            --env OPENSTORE_API_KEY="${OPENSTORE_API_KEY}" \
+            --env RELEASE_MESSAGE="${RELEASE_MESSAGE}" \
+            --volume ./:/app \
+            "${CLICKABLE_IMAGE}" \
+            bash -c 'cd /app && clickable publish -- "$RELEASE_MESSAGE"'
+
+concurrency:
+  group: release-picpocket-master
+  cancel-in-progress: false
