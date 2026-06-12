@@ -2,7 +2,10 @@
 
 [![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/picpocket.brennoflavio)
 
-An Immich Client App for Ubuntu Touch. Still under Heavy Development
+An Immich Client App for Ubuntu Touch. Mostly finished and stable
+
+Developed in [Forgejo](https://git.brennoflavio.com.br/brennoflavio/picpocket), GitHub is a read-only mirror
+only for issue tracking.
 
 ## License
 
