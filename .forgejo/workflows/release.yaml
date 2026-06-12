@@ -37,24 +37,73 @@ jobs:
       - name: Pull Clickable
         run: docker pull "${CLICKABLE_IMAGE}"
 
+      - name: Debug workspace
+        run: |
+          set -eu
+          echo "Runner workspace: $(pwd)"
+          echo "Resolved workspace path: $(readlink -f .)"
+          echo
+          echo "Environment:"
+          env | sort
+          echo
+          echo "Top-level filesystem:"
+          ls -la /
+          echo
+          for path in . /data /data/workspaces /workspace /github /github/workspace; do
+            echo "== Listing $path =="
+            if [ -e "$path" ]; then
+              ls -la "$path"
+            else
+              echo "missing"
+            fi
+            echo
+          done
+          echo "Mount info:"
+          cat /proc/self/mountinfo
+          echo
+          echo "clickable.yaml contents from current directory:"
+          cat clickable.yaml
+
+      - name: Debug Docker daemon paths
+        run: |
+          set -eu
+          echo "Docker version:"
+          docker version
+          echo
+          echo "Docker info:"
+          docker info
+          echo
+          for path in /data /data/workspaces /workspace /github/workspace; do
+            echo "== Daemon path probe: $path =="
+            docker run --rm -v "$path:/probe" alpine:3.20 sh -c 'ls -la /probe || true; echo; find /probe -maxdepth 2 -mindepth 1 | head -50 || true'
+            echo
+          done
+          current_path=$(readlink -f .)
+          echo "== Daemon current workspace probe: $current_path =="
+          docker run --rm -v "$current_path:/probe" alpine:3.20 sh -c 'ls -la /probe || true; echo; find /probe -maxdepth 2 -mindepth 1 | head -50 || true'
+
       - name: Build
         run: |
+          set -eu
+          current_path=$(readlink -f .)
           docker run \
             --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
-            --volume ./:/app \
+            --volume "$current_path:/app" \
             "${CLICKABLE_IMAGE}" \
-            bash -c "cd /app && clickable build"
+            bash -c 'set -eu; echo "Container workspace: $(pwd)"; echo; echo "Container top-level filesystem:"; ls -la /; echo; cd /app; echo "Mounted app directory:"; ls -la; echo; echo "clickable.yaml contents:"; cat clickable.yaml; echo; clickable build'
 
       - name: Deploy
         env:
           OPENSTORE_API_KEY: ${{ secrets.OPENSTORE_API_KEY }}
           RELEASE_MESSAGE: ${{ steps.commit.outputs.message }}
         run: |
+          set -eu
+          current_path=$(readlink -f .)
           docker run \
             --env CLICKABLE_FRAMEWORK="${CLICKABLE_FRAMEWORK}" \
             --env OPENSTORE_API_KEY="${OPENSTORE_API_KEY}" \
             --env RELEASE_MESSAGE="${RELEASE_MESSAGE}" \
-            --volume ./:/app \
+            --volume "$current_path:/app" \
             "${CLICKABLE_IMAGE}" \
             bash -c 'cd /app && clickable publish -- "$RELEASE_MESSAGE"'
 
