@@ -38,14 +38,14 @@ jobs:
             git checkout -B master
           fi
 
-      - name: Sync translation files
+      - name: Sync POT files
         run: |
           set -eu
           mkdir -p l10n/po
-          find l10n/po -maxdepth 1 -type f \( -name '*.po' -o -name '*.pot' \) -delete
+          find l10n/po -maxdepth 1 -type f -name '*.pot' -delete
 
           found_files=false
-          for file in po/*.po po/*.pot; do
+          for file in po/*.pot; do
             if [ ! -e "$file" ]; then
               continue
             fi
@@ -55,7 +55,7 @@ jobs:
           done
 
           if [ "$found_files" = false ]; then
-            echo "No translation files found in source repository"
+            echo "No POT files found in source repository"
           fi
 
       - name: Commit and push changes
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -eu
           if [ -z "$(git status --porcelain)" ]; then
-            echo "No translation changes to sync"
+            echo "No POT changes to sync"
             exit 0
           fi
 
