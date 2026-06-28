@@ -8,14 +8,16 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-15 04:26+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-06-29 17:01+0000\n"
+"Last-Translator: Perrete <dimasatr@proton.me>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/ubports/"
+"picpocket/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: ../qml/AlbumDetailPage.qml:33
 msgid "Album"
@@ -57,7 +59,7 @@ msgstr ""
 #: ../qml/PersonDetailPage.qml:156 ../qml/PhotoDetail.qml:227
 #: ../qml/SearchPage.qml:227
 msgid "Archive"
-msgstr ""
+msgstr "Archivar"
 
 #: ../qml/AlbumDetailPage.qml:187 ../qml/FavoritesPage.qml:170
 #: ../qml/GalleryPage.qml:245 ../qml/LocationDetailPage.qml:149
@@ -130,7 +132,7 @@ msgstr ""
 
 #: ../qml/AlbumsPage.qml:85
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: ../qml/AlbumsPage.qml:90
 msgid "Create"
@@ -143,7 +145,7 @@ msgstr ""
 #: ../qml/ArchivedPage.qml:28 ../qml/LibraryPage.qml:42
 #: ../qml/LibraryPage.qml:67
 msgid "Archived"
-msgstr ""
+msgstr "Archivados"
 
 #: ../qml/ArchivedPage.qml:45
 msgid "Loading archived photos..."
@@ -151,7 +153,7 @@ msgstr ""
 
 #: ../qml/ArchivedPage.qml:145 ../qml/PhotoDetail.qml:227
 msgid "Unarchive"
-msgstr ""
+msgstr "Desarchivar"
 
 #: ../qml/ArchivedPage.qml:151
 msgid "Unarchiving photos..."
@@ -207,7 +209,7 @@ msgstr ""
 
 #: ../qml/DeletedPhotosPage.qml:169 ../qml/PhotoDetail.qml:269
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 #: ../qml/DeletedPhotosPage.qml:175
 msgid "Permanently deleting photos..."
@@ -266,13 +268,13 @@ msgstr ""
 
 #: ../qml/GalleryPage.qml:361
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: ../qml/LibraryPage.qml:26 ../qml/LibraryPage.qml:55 ../qml/SearchPage.qml:28
 #: ../qml/SearchPage.qml:99 ../qml/ut_components/ActionableList.qml:107
 #: ../qml/ut_components/CardList.qml:84
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 #: ../qml/LibraryPage.qml:27
 msgid "Search your entire library"
@@ -312,7 +314,7 @@ msgstr ""
 
 #: ../qml/LocationDetailPage.qml:17
 msgid "Location"
-msgstr ""
+msgstr "Ubicación"
 
 #: ../qml/LocationDetailPage.qml:34
 msgid "Loading location photos..."
@@ -408,7 +410,7 @@ msgstr ""
 
 #: ../qml/PhotoDetail.qml:198 ../qml/PhotoDetail.qml:331
 msgid "Share"
-msgstr ""
+msgstr "Compartir"
 
 #: ../qml/PhotoDetail.qml:216
 msgid "Favorite"
@@ -441,40 +443,40 @@ msgstr ""
 #: ../qml/ut_components/ActionableList.qml:109
 #: ../qml/ut_components/CardList.qml:82
 msgid "No items"
-msgstr ""
+msgstr "No hay objetos"
 
 #: ../qml/ut_components/AppHeader.qml:78
 msgid "Back"
-msgstr ""
+msgstr "Atrás"
 
 #: ../qml/ut_components/AppHeader.qml:94
 msgid "Settings"
-msgstr ""
+msgstr "Ajustes"
 
 #: ../qml/ut_components/Form.qml:81
 msgid "Submit"
-msgstr ""
+msgstr "Enviar"
 
 #: ../qml/ut_components/ImageViewer.qml:388
 msgid "Failed to load image"
-msgstr ""
+msgstr "Fallo al cargar la imagen"
 
 #: ../qml/ut_components/ImageViewer.qml:483
 msgid "No image to display"
-msgstr ""
+msgstr "No hay imagen que mostrar"
 
 #: ../qml/ut_components/InputField.qml:91
 msgid "Invalid input"
-msgstr ""
+msgstr "Entrada inválida"
 
 #: ../qml/ut_components/InputField.qml:166
 msgid "This field is required"
-msgstr ""
+msgstr "Este campo es obligatorio"
 
 #: ../qml/ut_components/VideoViewer.qml:438
 msgid "Failed to load video"
-msgstr ""
+msgstr "Fallo al cargar el video"
 
 #: ../qml/ut_components/VideoViewer.qml:640
 msgid "No video to display"
-msgstr ""
+msgstr "No hay video que mostrar"
