@@ -142,14 +142,11 @@ def download_original(image_id: str) -> str:
 
 def upload_photo(url: str, token: str, file_path: str) -> http.Response:
     stat_info = os.stat(file_path)
-    modified_time = datetime.fromtimestamp(stat_info.st_mtime).isoformat()
-    creation_time = datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+    modified_time = datetime.fromtimestamp(stat_info.st_mtime).astimezone().isoformat()
+    creation_time = datetime.fromtimestamp(stat_info.st_ctime).astimezone().isoformat()
 
     file_name = file_path.split("/")[-1]
-    now_ts = int(datetime.now().timestamp())
     data = {
-        "deviceAssetId": f"ubuntu-touch-{file_name}-{now_ts}",
-        "deviceId": "ubuntu-touch",
         "fileCreatedAt": creation_time,
         "fileModifiedAt": modified_time,
     }
@@ -241,13 +238,16 @@ def delete_buckets():
         kv.delete_partial("bucket")
 
 
-def parse_duration(duration: str) -> Optional[str]:
+def parse_duration(duration: Optional[int]) -> Optional[str]:
     if not duration:
         return None
-    only_zeros = int(duration.replace(".", "").replace(":", "")) == 0
-    if only_zeros:
-        return None
-    return duration[3:8]
+
+    total_seconds = duration // 1000
+    minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
 
 
 @dataclass
@@ -265,24 +265,30 @@ class SearchResponse:
     previous: str
 
 
-def metadata_search(url: str, token: str, query_params: Dict[str, Any], page: str = "") -> SearchResponse:
-    if not page:
-        final_page = "1"
-    else:
-        final_page = page
+def metadata_search(
+    url: str,
+    token: str,
+    query_params: Dict[str, Any],
+    page: str = "",
+    visibility: Optional[str] = "timeline",
+) -> SearchResponse:
+    final_page = int(page) if page else 1
+    request_data = {"page": final_page, **query_params}
+    if visibility:
+        request_data["visibility"] = visibility
 
     response = http.post(
         url=api_url(url, "/api/search/metadata"),
         headers={"Authorization": f"Bearer {token}"},
-        json={"page": final_page, **query_params},
+        json=request_data,
     )
     response.raise_for_status()
     json_response = response.json()
-    previous_page = json_response.get("assets", {}).get("nextPage", "")
-    if int(final_page) - 1 < 1:
+    previous_page = str(json_response.get("assets", {}).get("nextPage", "") or "")
+    if final_page - 1 < 1:
         next_page = ""
     else:
-        next_page = str(int(final_page) - 1)
+        next_page = str(final_page - 1)
 
     items = json_response.get("assets", {}).get("items", [])
     assets = []
@@ -299,23 +305,20 @@ def metadata_search(url: str, token: str, query_params: Dict[str, Any], page: st
 
 
 def smart_search(url: str, token: str, query: str, page: str = "") -> SearchResponse:
-    if not page:
-        final_page = "1"
-    else:
-        final_page = page
+    final_page = int(page) if page else 1
 
     response = http.post(
         url=api_url(url, "/api/search/smart"),
         headers={"Authorization": f"Bearer {token}"},
-        json={"page": final_page, "query": query},
+        json={"page": final_page, "query": query, "visibility": "timeline"},
     )
     response.raise_for_status()
     json_response = response.json()
-    previous_page = json_response.get("assets", {}).get("nextPage", "")
-    if int(final_page) - 1 < 1:
+    previous_page = str(json_response.get("assets", {}).get("nextPage", "") or "")
+    if final_page - 1 < 1:
         next_page = ""
     else:
-        next_page = str(int(final_page) - 1)
+        next_page = str(final_page - 1)
 
     items = json_response.get("assets", {}).get("items", [])
     assets = []

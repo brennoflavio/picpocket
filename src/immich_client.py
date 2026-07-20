@@ -179,7 +179,7 @@ def base_timeline(prefix: str, bucket: str = "", query_args: Dict[str, str] = {}
         with ThreadPoolExecutor() as pool:
             futures = []
             for i, id_ in enumerate(ids):
-                duration = durations[i][3:8] if durations[i] else None
+                duration = parse_duration(durations[i])
                 if days[i]:
                     title = datetime.fromisoformat(created_ats[i]).strftime("%B, %d, %Y")
                 else:
@@ -375,7 +375,7 @@ def memories() -> MemoryContainer:
 
         response = http.get(
             url=api_url(url, "/api/memories"),
-            params={"for": datetime.now().isoformat()},
+            params={"for": datetime.now().date().isoformat()},
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
@@ -514,26 +514,31 @@ def album_detail(album_id: str) -> TimelineResponse:
         if not url or not token:
             raise ValueError("Missing URL or token")
 
-        response = http.get(
-            url=api_url(url, f"/api/albums/{album_id}"),
-            params={"withoutAssets": "false"},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        response.raise_for_status()
-        json_response = response.json()
-        assets = json_response.get("assets", [])
-        ids = [x.get("id") for x in assets if x.get("id")]
+        page = ""
+        assets = []
+        while True:
+            search_response = metadata_search(
+                url,
+                token,
+                {"albumIds": [album_id], "size": 1000},
+                page,
+                visibility=None,
+            )
+            assets.extend(search_response.assets)
+            if not search_response.previous:
+                break
+            page = search_response.previous
+
+        ids = [asset.id for asset in assets]
 
         with ThreadPoolExecutor() as pool:
             futures = []
             for i, asset in enumerate(assets):
-                id_ = asset.get("id")
-                if not id_:
-                    continue
+                id_ = asset.id
 
-                parsed_duration = parse_duration(asset.get("duration"))
+                parsed_duration = asset.duration
 
-                created_at = asset.get("fileCreatedAt", "").split(".")[0]
+                created_at = asset.created_at.split(".")[0]
                 if created_at:
                     title = datetime.fromisoformat(created_at).strftime("%B, %d, %Y")
                 else:
