@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: picpocket.brennoflavio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-20 18:00+0000\n"
-"PO-Revision-Date: 2026-07-21 19:01+0000\n"
-"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>\n"
+"PO-Revision-Date: 2026-07-25 19:57+0000\n"
+"Last-Translator: Daniel Frost <one@frostinfo.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/ubports/picpocket/"
 "de/>\n"
 "Language: de\n"
@@ -334,7 +334,7 @@ msgstr ""
 
 #: ../qml/LocationsPage.qml:65
 msgid "No locations found"
-msgstr ""
+msgstr "Keinen Ort gefunden"
 
 #: ../qml/Main.qml:94
 msgid "Sign in to Immich"
