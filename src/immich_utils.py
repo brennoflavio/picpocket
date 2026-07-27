@@ -5,7 +5,7 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; version 3.
 
-calpal is distributed in the hope that it will be useful,
+picpocket is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
-import src.ut_components.http as http
+import src.picpocket_http as http
 from src.ut_components.config import get_cache_path
 from src.ut_components.kv import KV
 from src.ut_components.memoize import hash_function_args
